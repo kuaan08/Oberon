@@ -17,7 +17,7 @@ import android.widget.TextView;
 public final class MobileUi {
     public static final String PREFS = "mobile_settings";
     public static final String[] THEMES = {
-        "Xbox Green", "Xbox Light", "Midnight", "Graphite", "Violet", "Ocean"
+        "Xbox Green", "Xbox Light", "AMOLED Black", "Midnight", "Graphite", "Violet", "Ocean"
     };
     public final int bg, panel, surface, text, muted, accent, accentText, border;
     public final String theme;
@@ -31,6 +31,10 @@ public final class MobileUi {
                 bg=rgb(242,248,243); panel=rgb(255,255,255); surface=rgb(227,238,229);
                 text=rgb(27,49,34); muted=rgb(91,112,97); accent=rgb(24,138,70);
                 accentText=Color.WHITE; border=rgb(193,216,199); break;
+            case "AMOLED Black":
+                bg=Color.BLACK;panel=rgb(13,17,14);surface=rgb(28,34,30);
+                text=rgb(242,251,245);muted=rgb(155,177,161);accent=rgb(112,238,149);
+                accentText=rgb(0,18,7);border=rgb(52,73,57);break;
             case "Midnight":
                 bg=rgb(11,15,29); panel=rgb(25,31,52); surface=rgb(38,46,73);
                 text=rgb(242,245,255); muted=rgb(160,173,198); accent=rgb(112,167,255);
