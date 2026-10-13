@@ -230,7 +230,7 @@ public final class MainActivity extends Activity {
         utilities.addView(shortcuts,ui.margin(-1,d(50),10));
         left.addView(utilities,ui.margin(-1,-2,7));
 
-        TextView foot=text("Oberon Extended Mobile  ·  Alpha 3  ·  Rede local",12,false,ui.muted);
+        TextView foot=text("Oberon Extended Mobile  ·  Alpha 4  ·  Rede local",12,false,ui.muted);
         foot.setGravity(Gravity.CENTER);
         whole.addView(foot,ui.margin(-1,d(43),2));
 
@@ -285,7 +285,10 @@ public final class MainActivity extends Activity {
         // Normal Android capture stops when this Activity loses focus.
         // With the explicitly enabled ROOT reader, do not erase its live
         // physical input state when opening another app.
-        if(!MobileService.backgroundCaptureRequested())input.reset();
+        if(MobileService.backgroundCaptureRequested()){
+            // A root reader still starting must not leave a held UI button stuck.
+            if(!MobileService.backgroundCapturing())input.clearPhysical();
+        }else input.reset();
         super.onPause();
     }
     private boolean gamepadSource(int source){
