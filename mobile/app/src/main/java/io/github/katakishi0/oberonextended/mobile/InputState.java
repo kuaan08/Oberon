@@ -59,6 +59,12 @@ public final class InputState {
                 physicalButtons|physicalHat)
             : new Snapshot(touchLx,touchLy,touchRx,touchRy,touchLt,touchRt,touchButtons);
     }
+    /** Clears only the physical gamepad; does not disturb active touch controls. */
+    public synchronized void clearPhysical() {
+        physicalLx=physicalLy=physicalRx=physicalRy=physicalLt=physicalRt=0;
+        digitalLt=digitalRt=0;
+        physicalButtons=physicalHat=0;
+    }
     public synchronized void reset() {
         touchLx=touchLy=touchRx=touchRy=touchLt=touchRt=0;
         physicalLx=physicalLy=physicalRx=physicalRy=physicalLt=physicalRt=0;
