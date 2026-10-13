@@ -180,6 +180,11 @@ public final class RootGamepadCapture {
         for(int i=0;i+2<parts.length;i++){
             if(parts[i].equals("EV_KEY")){
                 int bit=key(parts[i+1]);
+                if(prefs.getBoolean("experimental_enabled",false) &&
+                    prefs.getBoolean("experimental_swap_ab",false)){
+                    if(bit==InputState.A)bit=InputState.B;
+                    else if(bit==InputState.B)bit=InputState.A;
+                }
                 boolean down=parts[i+2].equals("DOWN")||parts[i+2].equals("REPEAT")
                     ||parts[i+2].equals("00000001")||parts[i+2].equals("00000002");
                 if(bit!=0)state.setPhysicalButton(bit,down);
