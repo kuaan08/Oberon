@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <queries>
+        <package android:name="moe.shizuku.privileged.api" />
+    </queries>
     <application
         android:allowBackup="false"
         android:label="Oberon Extended Mobile"
@@ -34,6 +37,13 @@
             android:screenOrientation="unspecified" />
         <activity android:name=".UpdatesActivity" android:exported="false"
             android:screenOrientation="unspecified" />
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
         <service
             android:name=".MobileService"
             android:exported="false"
