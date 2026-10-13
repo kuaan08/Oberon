@@ -80,6 +80,7 @@ public final class MainActivity extends Activity {
         return pad==null?null:pad.getName();
     }
     private boolean acceptDevice(int id){
+        if(prefs.getBoolean("multi_controller_enabled",true))return true;
         int chosen=prefs.getInt("selected_controller",-1);
         return chosen<0||chosen==id;
     }
@@ -307,12 +308,18 @@ public final class MainActivity extends Activity {
             }
             if(bit!=0){
                 if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
-                input.setPhysicalButton(bit,e.getAction()==KeyEvent.ACTION_DOWN);
+                InputState pad=MobileService.CONTROLLERS==null?input:
+                    MobileService.CONTROLLERS.forDevice(e.getDeviceId());
+                if(pad==null)return super.dispatchKeyEvent(e);
+                pad.setPhysicalButton(bit,e.getAction()==KeyEvent.ACTION_DOWN);
                 return true;
             }
             if(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2 ||
                 e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_R2) {
-                input.setPhysicalDigitalTrigger(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2,
+                InputState pad=MobileService.CONTROLLERS==null?input:
+                    MobileService.CONTROLLERS.forDevice(e.getDeviceId());
+                if(pad==null)return super.dispatchKeyEvent(e);
+                pad.setPhysicalDigitalTrigger(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2,
                     e.getAction()==KeyEvent.ACTION_DOWN?1:0);
                 return true;
             }
@@ -356,10 +363,13 @@ public final class MainActivity extends Activity {
             float rt=Math.max(e.getAxisValue(MotionEvent.AXIS_RTRIGGER),
                 e.getAxisValue(MotionEvent.AXIS_GAS));
             boolean invert=experimental&&prefs.getBoolean("experimental_invert_y",false);
-            input.setPhysicalAxes(e.getAxisValue(MotionEvent.AXIS_X),
+            InputState pad=MobileService.CONTROLLERS==null?input:
+                MobileService.CONTROLLERS.forDevice(e.getDeviceId());
+            if(pad==null)return super.onGenericMotionEvent(e);
+            pad.setPhysicalAxes(e.getAxisValue(MotionEvent.AXIS_X),
                 e.getAxisValue(MotionEvent.AXIS_Y)*(invert?-1:1),
                 rx,ry*(invert?-1:1),lt,rt);
-            input.setPhysicalHat(e.getAxisValue(MotionEvent.AXIS_HAT_X),
+            pad.setPhysicalHat(e.getAxisValue(MotionEvent.AXIS_HAT_X),
                 e.getAxisValue(MotionEvent.AXIS_HAT_Y));
             return true;
         }
