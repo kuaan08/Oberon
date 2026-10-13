@@ -27,8 +27,7 @@ public final class SettingsActivity extends Activity {
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
         OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
-        getWindow().setStatusBarColor(ui.bg);
-        getWindow().setNavigationBarColor(ui.bg);
+        ui.applyWindow(this);
         draw();
         MobileUi.enter(this);
     }
