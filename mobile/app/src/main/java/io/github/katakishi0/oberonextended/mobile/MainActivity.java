@@ -51,6 +51,7 @@ public final class MainActivity extends Activity {
                     double interval=MobileService.requestIntervalMs();
                     details.setText("Captura: "+(pad==null?"sem controle":InputDevices.family(pad))+
                         "\nBateria: "+(pad==null?"indisponível":InputDevices.battery(pad))+
+                        "\nCaptura em segundo plano: "+MobileService.backgroundCaptureStatus()+
                         "\nXbox conectado(s): "+MobileService.connectedClients()+
                         "\nPacotes recebidos/enviados: "+MobileService.requests()+"/"+MobileService.responses()+
                         "\nIntervalo entre pedidos: "+(interval<=0?"aguardando":
@@ -180,7 +181,7 @@ public final class MainActivity extends Activity {
         device=text("Procurando controles...",14,false,ui.muted);
         device.setMaxLines(3);
         gamepadCard.addView(device,ui.margin(-1,-2,2));
-        gamepadCard.addView(text("Conecte um controle ao Android. Botões e analógicos serão lidos enquanto este aplicativo estiver aberto.",13,false,ui.muted),
+        gamepadCard.addView(text("Captura normal: enquanto o aplicativo está aberto. Em aparelhos com root, é possível ativar captura em segundo plano nas configurações experimentais.",13,false,ui.muted),
             ui.margin(-1,-2,11));
         right.addView(gamepadCard,ui.margin(-1,-2,6));
         if(prefs.getBoolean("detailed_mode",false)){
@@ -281,7 +282,10 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onPause(){
         handler.removeCallbacks(updater);
-        input.reset();
+        // Normal Android capture stops when this Activity loses focus.
+        // With the explicitly enabled ROOT reader, do not erase its live
+        // physical input state when opening another app.
+        if(!MobileService.backgroundCaptureRequested())input.reset();
         super.onPause();
     }
     private boolean gamepadSource(int source){
@@ -290,6 +294,7 @@ public final class MainActivity extends Activity {
             (source&InputDevice.SOURCE_DPAD)==InputDevice.SOURCE_DPAD;
     }
     @Override public boolean dispatchKeyEvent(KeyEvent e){
+        if(MobileService.backgroundCapturing())return super.dispatchKeyEvent(e);
         if(gamepadSource(e.getSource()) && acceptDevice(e.getDeviceId())){
             int bit=mapButton(e.getKeyCode());
             if(prefs.getBoolean("experimental_enabled",false) &&
@@ -332,6 +337,7 @@ public final class MainActivity extends Activity {
         }
     }
     @Override public boolean onGenericMotionEvent(MotionEvent e){
+        if(MobileService.backgroundCapturing())return super.onGenericMotionEvent(e);
         if((e.getSource()&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK &&
             e.getAction()==MotionEvent.ACTION_MOVE && acceptDevice(e.getDeviceId())) {
             if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
