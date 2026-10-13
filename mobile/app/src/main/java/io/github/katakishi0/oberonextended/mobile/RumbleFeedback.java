@@ -26,11 +26,11 @@ public final class RumbleFeedback {
             stop();return;
         }
         long now=SystemClock.elapsedRealtime();
+        int[][] motors=decodeMotors(request);
         for(int slot=0;slot<4;slot++){
-            int start=1+slot*4;
-            int left=request[start]&255,right=request[start+1]&255;
-            int triggerL=request[start+2]&255,triggerR=request[start+3]&255;
-            int strength=Math.max(Math.max(left,right),Math.max(triggerL,triggerR));
+            int[] values=motors[slot];
+            int strength=Math.max(Math.max(values[0],values[1]),
+                Math.max(values[2],values[3]));
             Vibrator motor=deviceVibrator(slot);
             if(motor==null||!motor.hasVibrator())continue;
             if(strength==0){
@@ -52,6 +52,14 @@ public final class RumbleFeedback {
                 // though the controller itself has motors. Never claim success.
             }
         }
+    }
+    /** 0xFA + four [left,right,leftTrigger,rightTrigger] motor bytes. */
+    static int[][] decodeMotors(byte[] request){
+        int[][] result=new int[4][4];
+        if(request==null||request.length!=17||(request[0]&255)!=0xFA)return result;
+        for(int i=0;i<4;i++)for(int motor=0;motor<4;motor++)
+            result[i][motor]=request[1+i*4+motor]&255;
+        return result;
     }
     private Vibrator deviceVibrator(int slot){
         int id=controllers.deviceForSlot(slot);
