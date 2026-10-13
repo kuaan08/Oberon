@@ -7,11 +7,11 @@
 An Android edition of the Oberon Remote Input experience, with a green Xbox-inspired interface, on-screen controls, and support for compatible Bluetooth/USB controllers.
 
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](https://github.com/kuaan08/Oberon/releases)
-[![Version](https://img.shields.io/badge/version-0.3.0--alpha.3-73EE97)](https://github.com/kuaan08/Oberon/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0--alpha.4-73EE97)](https://github.com/kuaan08/Oberon/releases)
 [![Status](https://img.shields.io/badge/channel-Alpha%20%2F%20Pre--release-orange)](https://github.com/kuaan08/Oberon/releases)
 [![Source](https://img.shields.io/badge/source-open-blue)](LICENSE)
 
-### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.3.0-alpha.3) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
+### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.4.0-alpha.4) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
 
 </div>
 
@@ -46,7 +46,7 @@ This Android project is an experimental extension of the Oberon ecosystem. It is
 
 **Requirements:** Android **8.0 or newer**, a phone and Xbox on the same local network, and the original Oberon app installed on the Xbox. A Bluetooth/USB controller is optional if you prefer the on-screen controls.
 
-> **Development status:** Alpha 3 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
+> **Development status:** Alpha 4 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
 
 ## Connect to Xbox — four easy steps
 
@@ -89,6 +89,22 @@ Oberon Extended Mobile displays actual received input requests, sent responses, 
 
 The app shows a controller's battery only if Android and that controller's driver provide battery information. **Unknown battery** means the information was not available; it does not mean the battery is empty.
 
+### Background controller capture (experimental ROOT mode)
+
+When Oberon Extended Mobile is minimized, Android normally stops delivering controller `KeyEvent` and `MotionEvent` data to the app. The **foreground service keeps the Xbox WebSocket server running, but does not capture gamepad input by itself**.
+
+Alpha 4 introduces an **optional ROOT-only experimental reader** that uses Android's `getevent` tool on the *selected gamepad's* `/dev/input/event*` device, rather than depending on Activity focus. When supported by the controller, this can send buttons, analog sticks, triggers and the D-pad while the main app is minimized.
+
+To test it:
+
+1. Pair the physical controller with Android before starting the server.
+2. Open **Configurações → Experimental → Capturar em segundo plano (ROOT)**.
+3. Read and accept the root-access warning. Use this only if you trust the app and have a rooted Android device.
+4. Stop and restart the Xbox server; approve the **su / Magisk** request if your device shows one.
+5. Check **Modo detalhado** for capture status, then minimize the app and test your controller with the Xbox.
+
+**Important:** this feature requires root, is **off by default**, and is **unverified with physical controllers**. SELinux restrictions, an unsupported driver, different Linux button/axis mappings or Android power management may prevent it from working. It does not work on ordinary unrooted Android devices, and it is not a guarantee of global input capture on every device. Only the selected gamepad event node is intended to be read, not the touch screen or general keyboard. The app does not store a raw input log.
+
 ## Troubleshooting
 
 | Problem | What to try |
@@ -103,7 +119,7 @@ The app shows a controller's battery only if Android and that controller's drive
 ## Known limitations
 
 - **One active controller slot** is transmitted in the current Android version; the original protocol supports up to four, but this mobile alpha has not implemented that yet.
-- Physical gamepad input depends on how Android exposes the controller's events. Keeping the server alive in the background does not guarantee background input capture.
+- Normal Android gamepad capture works only while the app is focused. The optional ROOT background input reader is experimental, requires explicit permission and may not work on every device.
 - Controller rumble/force feedback is **not implemented** in the mobile sender.
 - Real Xbox input latency and hardware compatibility have **not been validated across devices**.
 - This project is for **trusted local networks**, not public hosting or internet-exposed port forwarding.
