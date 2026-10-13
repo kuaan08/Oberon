@@ -6,6 +6,9 @@ on:
       - 'mobile/**'
       - '.github/workflows/oberon-extended-mobile.yml'
   workflow_dispatch:
+concurrency:
+  group: oberon-mobile-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -26,6 +29,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
+      # Keep a consistent debug signature between preview builds, where
+      # possible, so Android can install an update over the prior preview.
+      # An official signed release will require a private production key.
+      - name: Cache test signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: oberon-extended-mobile-debug-signing-v1
       - name: Unit tests and Android debug APK
         working-directory: mobile
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
