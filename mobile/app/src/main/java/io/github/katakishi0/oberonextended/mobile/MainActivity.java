@@ -229,7 +229,7 @@ public final class MainActivity extends Activity {
         utilities.addView(shortcuts,ui.margin(-1,d(50),10));
         left.addView(utilities,ui.margin(-1,-2,7));
 
-        TextView foot=text("Oberon Extended Mobile  ·  Alpha 2  ·  Rede local",12,false,ui.muted);
+        TextView foot=text("Oberon Extended Mobile  ·  Alpha 3  ·  Rede local",12,false,ui.muted);
         foot.setGravity(Gravity.CENTER);
         whole.addView(foot,ui.margin(-1,d(43),2));
 
