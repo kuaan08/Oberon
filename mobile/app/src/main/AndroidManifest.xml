@@ -12,6 +12,7 @@
     </queries>
     <application
         android:allowBackup="false"
+        android:supportsRtl="true"
         android:label="Oberon Extended Mobile"
         android:icon="@drawable/ic_oberon"
         android:roundIcon="@drawable/ic_oberon"
