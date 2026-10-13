@@ -58,6 +58,8 @@ public final class MobileService extends Service {
             if(Build.VERSION.SDK_INT>=29)
                 startForeground(26401,initial,ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
             else startForeground(26401,initial);
+            server.setLowLatencyTcp(getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE)
+                .getBoolean("experimental_tcp_nodelay",true));
             server.start();
             status="Waiting for Xbox";
         }catch(IOException|RuntimeException e){
