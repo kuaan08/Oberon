@@ -21,10 +21,27 @@ public final class SettingsActivity extends Activity {
     private MobileUi ui;
     private SharedPreferences prefs;
     private LinearLayout content;
+    private static final int SHIZUKU_REQUEST=1405;
+    private final rikka.shizuku.Shizuku.OnRequestPermissionResultListener shizukuPermission=
+        (request,grant)->{
+            if(request!=SHIZUKU_REQUEST)return;
+            if(grant==android.content.pm.PackageManager.PERMISSION_GRANTED){
+                prefs.edit().putString("background_capture_mode","shizuku").apply();
+                ExtendedDialog.info(this,"Shizuku autorizado",
+                    "Modo Shizuku selecionado. Pare e reinicie o servidor para testar "+
+                    "se o Android permite ler o controle em segundo plano.");
+                draw();
+            }else{
+                ExtendedDialog.info(this,"Permissão negada",
+                    "O modo Shizuku continuará desligado. Você pode usar a captura normal "+
+                    "ou o modo ROOT se o seu aparelho tiver root.");
+            }
+        };
     private int d(float v){return MobileUi.dp(this,v);}
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
+        rikka.shizuku.Shizuku.addRequestPermissionResultListener(shizukuPermission);
         OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
         ui.applyWindow(this);
@@ -175,17 +192,33 @@ public final class SettingsActivity extends Activity {
         addSwitch(experiments,"Trocar A e B",
             "Para controles genéricos com botões A/B invertidos",
             "experimental_swap_ab",false);
-        addRootBackgroundOption(experiments);
-        addNote(experiments,"O modo ROOT lê exclusivamente o dispositivo de controle "+
-            "selecionado. Não funciona em Android sem root, pode exigir autorização "+
-            "no Magisk e ainda precisa ser testado com cada modelo de controle. "+
-            "Reinicie o servidor após mudar.");
+        addCaptureModes(experiments);
+        addNote(experiments,"O modo Shizuku sem root usa os privilégios ADB/shell. "+
+            "Alguns aparelhos bloqueiam a leitura de /dev/input mesmo com Shizuku. "+
+            "O modo ROOT requer Magisk ou su. Reinicie o servidor após mudar.");
         addSwitch(experiments,"TCP sem espera de agrupamento",
             "Ativa TCP_NODELAY (padrão). Reinicie o servidor após mudar.",
             "experimental_tcp_nodelay",true);
         addNote(experiments,"A opção TCP_NODELAY pode reduzir o atraso causado "+
             "pelo agrupamento de pacotes, mas não controla o ping da rede Xbox.");
         content.addView(experiments,ui.margin(-1,-2,8));
+        section("MULTICONTROLE E VIBRAÇÃO",
+            "O protocolo Xbox aceita até quatro controles e quatro comandos de vibração.");
+        LinearLayout multi=ui.card(true);
+        addSwitch(multi,"Até 4 controles",
+            "Permite que cada controle Android conectado ocupe um slot separado",
+            "multi_controller_enabled",true);
+        addSwitch(multi,"Vibração do controle",
+            "Encaminha motores enviados pelo Xbox quando o Android oferece Vibrator",
+            "controller_rumble",true);
+        addSwitch(multi,"Vibração no celular para controle virtual",
+            "Opcional: usa a vibração do telefone quando o Xbox pedir retorno",
+            "touch_rumble_feedback",false);
+        addNote(multi,"Shizuku e ROOT capturam somente um dispositivo em segundo plano "+
+            "nesta versão. Até quatro controles podem funcionar simultaneamente "+
+            "quando a tela do aplicativo recebe os eventos do Android. "+
+            "Alguns drivers Bluetooth não oferecem motores de vibração.");
+        content.addView(multi,ui.margin(-1,-2,8));
         section("CONTROLE PREFERIDO",
             "Escolha um dispositivo Android ou mantenha a captura automática.");
         LinearLayout controllers=ui.card(true);
@@ -288,6 +321,72 @@ public final class SettingsActivity extends Activity {
         note.setPadding(0,d(4),0,d(7));
         target.addView(note);
     }
+    private void addCaptureModes(LinearLayout panel){
+        panel.addView(ui.label("CAPTURA EM SEGUNDO PLANO",14,true,ui.accent),
+            ui.margin(-1,d(32),13));
+        String chosen=prefs.getString("background_capture_mode",
+            prefs.getBoolean("experimental_root_background",false)?"root":"normal");
+        for(String mode:new String[]{"normal","root","shizuku"}){
+            boolean active=mode.equals(chosen);
+            String title="normal".equals(mode)?"Normal (sem root)":
+                "root".equals(mode)?"ROOT (su / Magisk)":"Shizuku (ADB / sem root)";
+            Button choose=ui.button((active?"✓  ":"")+title,active);
+            choose.setOnClickListener(v->{
+                if("normal".equals(mode)){
+                    prefs.edit().putString("background_capture_mode","normal")
+                        .putBoolean("experimental_root_background",false).apply();
+                    recreate();return;
+                }
+                if("root".equals(mode)){
+                    ExtendedDialog.confirm(this,"Captura ROOT",
+                        "Lê apenas o controle escolhido por /dev/input com privilégios "+
+                        "de superusuário. Necessita conceder acesso no Magisk e "+
+                        "reiniciar o servidor. Use apenas se confiar no aplicativo.",
+                        "Usar ROOT",()->{
+                            prefs.edit().putString("background_capture_mode","root")
+                                .putBoolean("experimental_root_background",true).apply();
+                            recreate();
+                        });return;
+                }
+                try{
+                    if(!rikka.shizuku.Shizuku.pingBinder()){
+                        ExtendedDialog.info(this,"Shizuku não iniciado",
+                            "Instale e abra o Shizuku. No Android 11+, ative a "+
+                            "Depuração sem fio nas Opções do desenvolvedor e inicie "+
+                            "o serviço no aplicativo Shizuku. Volte aqui depois. "+
+                            "Shizuku não concede root automaticamente.");
+                        return;
+                    }
+                    if(rikka.shizuku.Shizuku.isPreV11()){
+                        ExtendedDialog.info(this,"Shizuku antigo",
+                            "Atualize o Shizuku para uma versão compatível com UserService.");
+                        return;
+                    }
+                    ExtendedDialog.confirm(this,"Captura via Shizuku",
+                        "Este modo usa o processo Shizuku com identidade ADB/shell "+
+                        "para tentar ler os eventos do controle ao minimizar. "+
+                        "ADB pode não ter permissão para acessar /dev/input. "+
+                        "O aplicativo indicará se o acesso for negado. "+
+                        "É necessário iniciar o Shizuku e autorizar a conexão.",
+                        "Autorizar",()->{
+                            try{
+                                if(rikka.shizuku.Shizuku.checkSelfPermission()==
+                                    android.content.pm.PackageManager.PERMISSION_GRANTED){
+                                    prefs.edit().putString("background_capture_mode","shizuku")
+                                        .putBoolean("experimental_root_background",false).apply();
+                                    recreate();
+                                }else rikka.shizuku.Shizuku.requestPermission(SHIZUKU_REQUEST);
+                            }catch(Exception e){
+                                ExtendedDialog.info(this,"Erro do Shizuku",e.getMessage());
+                            }
+                        });
+                }catch(Exception e){
+                    ExtendedDialog.info(this,"Shizuku indisponível",e.getMessage());
+                }
+            });
+            panel.addView(choose,ui.margin(-1,d(48),8));
+        }
+    }
     private void addRootBackgroundOption(LinearLayout target){
         LinearLayout row=new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -349,5 +448,9 @@ public final class SettingsActivity extends Activity {
     @Override public void finish() {
         super.finish();
         MobileUi.exit(this);
+    }
+    @Override protected void onDestroy(){
+        rikka.shizuku.Shizuku.removeRequestPermissionResultListener(shizukuPermission);
+        super.onDestroy();
     }
 }
