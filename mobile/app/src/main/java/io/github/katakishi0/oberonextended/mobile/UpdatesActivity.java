@@ -89,12 +89,15 @@ public final class UpdatesActivity extends Activity {
                         for(int i=0;i<releases.length();i++){
                             JSONObject item=releases.getJSONObject(i);
                             if(item.optBoolean("draft",false))continue;
+                            // Other desktop/Xbox releases in this repository
+                            // are not Android APK updates.
+                            if(!item.optString("tag_name","").startsWith("mobile-v"))continue;
                             newest=item;break;
                         }
                         if(newest==null){
-                            message="Ainda não há uma versão publicada em Releases. "+
-                                "As compilações de desenvolvimento podem estar disponíveis no GitHub Actions.";
-                            destination="https://github.com/kuaan08/Oberon/actions/workflows/oberon-extended-mobile.yml";
+                            message="Ainda não há uma versão Android publicada. "+
+                                "Acompanhe as futuras versões Alpha e Beta na página Releases.";
+                            destination=RELEASES;
                         } else {
                             String tag=newest.optString("tag_name","");
                             int compare=compareVersions(tag,version());
@@ -138,7 +141,7 @@ public final class UpdatesActivity extends Activity {
         return 0;
     }
     private static int[] numeric(String tag){
-        String clean=tag.replaceFirst("^[vV]","");
+        String clean=tag.replaceFirst("^(?i:mobile-)","").replaceFirst("^[vV]","");
         String[] sections=clean.split("[.-]");
         int[] result=new int[4];
         int idx=0;
