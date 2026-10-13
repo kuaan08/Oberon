@@ -15,7 +15,7 @@ public final class ShizukuGamepadCapture {
     public interface Status {void onChange(String status);}
     private final Context context;
     private final SharedPreferences prefs;
-    private final RootGamepadCapture decoder;
+    private RootGamepadCapture decoder;
     private final Status status;
     private volatile boolean started,connected;
     private volatile String description="Desativado";
