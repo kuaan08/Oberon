@@ -175,6 +175,11 @@ public final class SettingsActivity extends Activity {
         addSwitch(experiments,"Trocar A e B",
             "Para controles genéricos com botões A/B invertidos",
             "experimental_swap_ab",false);
+        addRootBackgroundOption(experiments);
+        addNote(experiments,"O modo ROOT lê exclusivamente o dispositivo de controle "+
+            "selecionado. Não funciona em Android sem root, pode exigir autorização "+
+            "no Magisk e ainda precisa ser testado com cada modelo de controle. "+
+            "Reinicie o servidor após mudar.");
         addSwitch(experiments,"TCP sem espera de agrupamento",
             "Ativa TCP_NODELAY (padrão). Reinicie o servidor após mudar.",
             "experimental_tcp_nodelay",true);
@@ -282,6 +287,43 @@ public final class SettingsActivity extends Activity {
         TextView note=ui.label(message,13,false,ui.muted);
         note.setPadding(0,d(4),0,d(7));
         target.addView(note);
+    }
+    private void addRootBackgroundOption(LinearLayout target){
+        LinearLayout row=new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0,d(11),0,d(11));
+        LinearLayout labels=new LinearLayout(this);
+        labels.setOrientation(LinearLayout.VERTICAL);
+        labels.addView(ui.label("Capturar em segundo plano (ROOT)",15,true,ui.text));
+        labels.addView(ui.label("Permite ler botões e analógicos ao minimizar, usando acesso root opcional.",
+            12,false,ui.muted),ui.margin(-1,-2,3));
+        row.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
+        Switch toggle=new Switch(this);
+        toggle.setShowText(false);
+        toggle.setChecked(prefs.getBoolean("experimental_root_background",false));
+        toggle.setThumbTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        toggle.setOnCheckedChangeListener((control,checked)->{
+            if(!checked){
+                prefs.edit().putBoolean("experimental_root_background",false).apply();
+                return;
+            }
+            toggle.setChecked(false);
+            ExtendedDialog.confirm(this,"Captura experimental ROOT",
+                "O Android não entrega analógicos de controle a aplicativos sem foco. "+
+                "Esse modo usa su/getevent para ler exclusivamente um controle físico "+
+                "pelo dispositivo /dev/input, mesmo com a janela minimizada.\n\n"+
+                "É necessário conceder root ao Oberon Extended Mobile. "+
+                "Isso dá privilégios elevados ao processo leitor e deve ser usado "+
+                "somente se você confia neste aplicativo.\n\n"+
+                "Ele não é compatível com todos os aparelhos/controladores. "+
+                "Ative e reinicie o servidor para testar.",
+                "Ativar ROOT",()->{
+                    prefs.edit().putBoolean("experimental_root_background",true).apply();
+                    toggle.setChecked(true);
+                });
+        });
+        row.addView(toggle);
+        target.addView(row);
     }
     private void addSwitch(LinearLayout target,String title,String help,String pref,boolean fallback){
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
