@@ -52,8 +52,7 @@ public final class DiagnosticsActivity extends Activity {
         OrientationPrefs.apply(this,"app_orientation","auto");
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
         ui=MobileUi.from(this);
-        getWindow().setStatusBarColor(ui.bg);
-        getWindow().setNavigationBarColor(ui.bg);
+        ui.applyWindow(this);
         ScrollView page=new ScrollView(this);
         page.setFillViewport(true);page.setBackgroundColor(ui.bg);
         LinearLayout layout=new LinearLayout(this);
