@@ -21,6 +21,8 @@ public final class OberonWebSocketServer {
     private volatile ServerSocket listenerSocket;
     private volatile Socket client;
     private volatile int connections;
+    private volatile boolean lowLatencyTcp=true;
+    public void setLowLatencyTcp(boolean enabled){lowLatencyTcp=enabled;}
     private volatile long packetsRequested;
     private volatile long packetsSent;
     private volatile double requestIntervalMs;
@@ -63,7 +65,7 @@ public final class OberonWebSocketServer {
         while(active.get()){
             try {
                 Socket socket=listenerSocket.accept();
-                socket.setTcpNoDelay(true);
+                socket.setTcpNoDelay(lowLatencyTcp);
                 socket.setSoTimeout(6000);
                 Socket previous=client;
                 if(previous!=null)closeQuietly(previous);
