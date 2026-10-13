@@ -7,11 +7,11 @@
 An Android edition of the Oberon Remote Input experience, with a green Xbox-inspired interface, on-screen controls, and support for compatible Bluetooth/USB controllers.
 
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](https://github.com/kuaan08/Oberon/releases)
-[![Version](https://img.shields.io/badge/version-0.4.0--alpha.4-73EE97)](https://github.com/kuaan08/Oberon/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0--alpha.5-73EE97)](https://github.com/kuaan08/Oberon/releases)
 [![Status](https://img.shields.io/badge/channel-Alpha%20%2F%20Pre--release-orange)](https://github.com/kuaan08/Oberon/releases)
 [![Source](https://img.shields.io/badge/source-open-blue)](LICENSE)
 
-### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.4.0-alpha.4) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
+### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.5.0-alpha.5) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
 
 </div>
 
@@ -46,7 +46,7 @@ This Android project is an experimental extension of the Oberon ecosystem. It is
 
 **Requirements:** Android **8.0 or newer**, a phone and Xbox on the same local network, and the original Oberon app installed on the Xbox. A Bluetooth/USB controller is optional if you prefer the on-screen controls.
 
-> **Development status:** Alpha 4 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
+> **Development status:** Alpha 5 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
 
 ## Connect to Xbox — four easy steps
 
@@ -62,14 +62,14 @@ The dashboard shows whether a client is connected. You can stop the local server
 | Area | What you can do |
 | --- | --- |
 | **Android dashboard** | Portrait/landscape layout, server start/stop, local IP, connection status and copy-IP button. |
-| **Physical gamepads** | Use supported USB and Bluetooth controllers recognized by Android. The app identifies Xbox-like, PlayStation-like, Nintendo and generic devices when possible. |
+| **Physical gamepads** | Use up to four USB/Bluetooth gamepads in separate Xbox slots when Android delivers their events. Identification covers Xbox-like, PlayStation-like, Nintendo and generic devices. |
 | **Full-screen touch** | Two analog sticks, ABXY, D-pad, triggers, shoulders, View/Menu/Guide and independent multi-touch pointer tracking. |
 | **Orientation** | Set the whole application's orientation to **Automatic**, **Vertical** or **Horizontal**; choose the virtual controller's orientation separately. |
 | **Control customization** | Adjust overall size, separate analog-stick and face-button sizes, opacity, analog deadzone, touch vibration and animations. |
 | **Themes** | Xbox Green, Xbox Light, **AMOLED Black**, Midnight, Graphite, Violet and Ocean. Dialogs and system bars follow the theme where supported. |
 | **Detailed mode** | Optional controller and connection information on the main dashboard. |
 | **Diagnostics** | Controller name/type, Android vendor/product identifiers, supported axes, optional battery report, connection count, packet counters and request intervals. |
-| **Experimental settings** | Preferred controller selection, alternative right-stick axes, inverted stick Y, swapped A/B and TCP_NODELAY. |
+| **Experimental settings** | Normal, ROOT or Shizuku background capture, preferred controller, 4-slot support, Xbox rumble, alternative right-stick axes, inverted Y, swapped A/B and TCP_NODELAY. |
 | **Updates** | Check public Android Alpha/Beta releases from inside the app and open the official release/download link. Nothing is installed silently. |
 | **Background connection** | Android foreground service with a notification to keep the local WebSocket server available. |
 
@@ -89,21 +89,21 @@ Oberon Extended Mobile displays actual received input requests, sent responses, 
 
 The app shows a controller's battery only if Android and that controller's driver provide battery information. **Unknown battery** means the information was not available; it does not mean the battery is empty.
 
-### Background controller capture (experimental ROOT mode)
+### Background controller capture: normal, ROOT or Shizuku
 
 When Oberon Extended Mobile is minimized, Android normally stops delivering controller `KeyEvent` and `MotionEvent` data to the app. The **foreground service keeps the Xbox WebSocket server running, but does not capture gamepad input by itself**.
 
-Alpha 4 introduces an **optional ROOT-only experimental reader** that uses Android's `getevent` tool on the *selected gamepad's* `/dev/input/event*` device, rather than depending on Activity focus. When supported by the controller, this can send buttons, analog sticks, triggers and the D-pad while the main app is minimized.
+Alpha 5 includes an **optional ROOT experimental reader** that uses Android's `getevent` tool on the *selected gamepad's* `/dev/input/event*` device, rather than depending on Activity focus. When supported by the controller, this can send buttons, analog sticks, triggers and the D-pad while the main app is minimized.
 
 To test it:
 
 1. Pair the physical controller with Android before starting the server.
-2. Open **Configurações → Experimental → Capturar em segundo plano (ROOT)**.
-3. Read and accept the root-access warning. Use this only if you trust the app and have a rooted Android device.
-4. Stop and restart the Xbox server; approve the **su / Magisk** request if your device shows one.
+2. Open **Configurações → Experimental → Captura em segundo plano**. Choose **ROOT (su/Magisk)** on rooted phones or **Shizuku (ADB)** on unrooted phones that have started Shizuku.
+3. Read the permission warning. With ROOT, grant access in Magisk. With Shizuku, install and start the Shizuku service (wireless debugging on Android 11+) and authorize the connection.
+4. Stop and restart the Xbox server after changing the capture mode.
 5. Check **Modo detalhado** for capture status, then minimize the app and test your controller with the Xbox.
 
-**Important:** this feature requires root, is **off by default**, and is **unverified with physical controllers**. SELinux restrictions, an unsupported driver, different Linux button/axis mappings or Android power management may prevent it from working. It does not work on ordinary unrooted Android devices, and it is not a guarantee of global input capture on every device. Only the selected gamepad event node is intended to be read, not the touch screen or general keyboard. The app does not store a raw input log.
+**Important:** ROOT requires superuser privileges; Shizuku runs with ADB/shell privileges and **does not grant root**. Both modes are **off by default** and are **unverified with physical controllers**. Shizuku may show **permission denied** for /dev/input on devices whose SELinux or filesystem permissions block shell access. SELinux restrictions, an unsupported driver, different Linux button/axis mappings or Android power management may prevent it from working. It does not work on ordinary unrooted Android devices, and it is not a guarantee of global input capture on every device. Only the selected gamepad event node is intended to be read, not the touch screen or general keyboard. The app does not store a raw input log.
 
 ## Troubleshooting
 
@@ -118,9 +118,9 @@ To test it:
 
 ## Known limitations
 
-- **One active controller slot** is transmitted in the current Android version; the original protocol supports up to four, but this mobile alpha has not implemented that yet.
+- **Up to four Android controllers** can now occupy the original Xbox receiver's four independent slots while the app receives their events. The ROOT and Shizuku background readers still support only one selected physical controller; multigamepad hardware behavior needs testing.
 - Normal Android gamepad capture works only while the app is focused. The optional ROOT background input reader is experimental, requires explicit permission and may not work on every device.
-- Controller rumble/force feedback is **not implemented** in the mobile sender.
+- **Rumble forwarding is experimental**: the Xbox's four motor values are mapped to each Android controller's vibrator only if Android exposes that controller's vibration API. Bluetooth/USB drivers may not support vibration. Virtual-pad phone rumble is opt-in.
 - Real Xbox input latency and hardware compatibility have **not been validated across devices**.
 - This project is for **trusted local networks**, not public hosting or internet-exposed port forwarding.
 
