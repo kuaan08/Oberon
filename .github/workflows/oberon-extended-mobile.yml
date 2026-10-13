@@ -54,6 +54,9 @@ jobs:
           path: ~/.android/debug.keystore
           key: oberon-extended-mobile-debug-signing-v1
 
+      - name: Validate offline translations
+        run: python3 -m json.tool mobile/app/src/main/assets/translations.json >/dev/null
+
       - name: Run tests and compile Android APK
         working-directory: mobile
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
@@ -90,7 +93,8 @@ jobs:
           - Full-screen virtual gamepad in portrait or landscape and customizable controls.
           - Extended themes (including AMOLED Black), custom dialogs, haptics and animations.
           - Controller diagnostics, optional battery information and experimental mappings.
-          - New in Alpha 5: up to four controllers, Android vibration forwarding, and opt-in Shizuku/ROOT background gamepad readers.
+          - New in Alpha 6: selectable in-app languages, system-language detection and offline English fallback.
+          - Original 4-slot controller routing, Shizuku/ROOT experiments and rumble support remain available.
           - Local WebSocket input sender on port 26401 and in-app update checks.
 
           ### Connect to Xbox
