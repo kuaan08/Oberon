@@ -1,244 +1,272 @@
 package io.github.katakishi0.oberonextended.mobile;
 
-import android.app.*;
-import android.content.*;
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.os.*;
-import android.view.*;
-import android.widget.*;
-import java.util.*;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.Gravity;
+import android.view.InputDevice;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
+/** Responsive Android home screen. Gamepad touch input lives in TouchActivity. */
 public final class MainActivity extends Activity {
     private final InputState input=MobileService.INPUT;
-    private SharedPreferences prefs;
-    private boolean light;
-    private LinearLayout root,layout;
-    private TextView status,ip,controllerName;
-    private Button connect,touchMode,hardwareMode;
-    private VirtualGamepadView gamepadView;
-    private TextView physicalInfo;
-    private int bg,surface,fg,muted,accent;
     private final Handler handler=new Handler(Looper.getMainLooper());
-    private final Runnable ticker=new Runnable(){
+    private SharedPreferences prefs;
+    private MobileUi ui;
+    private TextView status,ip,device,connectionCount;
+    private Button connection;
+    private boolean autoTouchLaunched;
+    private int d(float v){return MobileUi.dp(this,v);}
+
+    private final Runnable updater=new Runnable(){
         @Override public void run(){
             if(status!=null) {
-                status.setText(MobileService.currentStatus());
-                status.setTextColor(MobileService.connectedClients()>0?accent:muted);
-                connect.setText(MobileService.running()?"STOP SERVER":"START SERVER");
-                ip.setText("Xbox address: "+LanAddress.find()+":"+OberonProtocol.PORT);
-                controllerName.setText(input.usePhysical()?
-                    "Gamepad: "+input.lastController():"Virtual touch controller ready");
+                String raw=MobileService.currentStatus();
+                status.setText(statusLabel(raw));
+                status.setTextColor(MobileService.connectedClients()>0?ui.accent:ui.muted);
+                connectionCount.setText(MobileService.connectedClients()>0?
+                    "Xbox conectado":"Aguardando conexão");
+                connection.setText(MobileService.running()?"Parar servidor":"Iniciar servidor");
+                ip.setText(LanAddress.find()+":26401");
+                String detected=detectController();
+                device.setText(detected==null?"Nenhum controle detectado":
+                    "Conectado: "+detected);
+                if(detected!=null)input.setControllerName(detected);
             }
-            handler.postDelayed(this,700);
+            handler.postDelayed(this,800);
         }
     };
-
-    @Override public void onCreate(Bundle b){
-        super.onCreate(b);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        prefs=getSharedPreferences("mobile_settings",MODE_PRIVATE);
-        light=prefs.getBoolean("light",false);
-        input.setDeadzone(prefs.getInt("deadzone",10)/100f);
-        input.setUsePhysical(prefs.getBoolean("physical",false));
-        setColors();
-        buildUi();
+    private String statusLabel(String value){
+        if(!MobileService.running())return "Servidor desligado";
+        if(MobileService.connectedClients()>0)return "Xbox conectado";
+        if(value.startsWith("Could not"))return "Erro na conexão: "+value;
+        return "Servidor pronto";
     }
-    private void setColors(){
-        bg=Color.rgb(light?245:10,light?249:21,light?246:14);
-        surface=Color.rgb(light?230:22,light?239:39,light?233:28);
-        fg=light?Color.rgb(22,46,30):Color.rgb(236,248,239);
-        muted=light?Color.rgb(94,116,101):Color.rgb(151,176,160);
-        accent=light?Color.rgb(21,131,66):Color.rgb(113,238,152);
-    }
-    private int dp(float dp){return Math.round(getResources().getDisplayMetrics().density*dp);}
-    private GradientDrawable background(int color,int radius){
-        GradientDrawable drawable=new GradientDrawable();
-        drawable.setColor(color);drawable.setCornerRadius(dp(radius));return drawable;
-    }
-    private TextView text(String t,int sp,int color,boolean bold){
-        TextView tv=new TextView(this);tv.setText(t);tv.setTextSize(sp);tv.setTextColor(color);
-        if(bold)tv.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
-        tv.setGravity(Gravity.CENTER_VERTICAL);
-        return tv;
-    }
-    private Button button(String title,boolean primary){
-        Button btn=new Button(this);btn.setText(title);btn.setTextSize(11);
-        btn.setAllCaps(false);btn.setPadding(dp(10),0,dp(10),0);
-        btn.setTextColor(primary?bg:fg);
-        btn.setBackground(background(primary?accent:surface,8));
-        btn.setMinHeight(dp(40));btn.setMinimumHeight(dp(40));
-        return btn;
-    }
-    private void buildUi(){
-        root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(bg);root.setPadding(dp(16),dp(9),dp(16),dp(6));
-        setContentView(root);
-        LinearLayout titleRow=new LinearLayout(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView brand=text("OBERON",18,fg,true);
-        TextView extended=text("  EXTENDED MOBILE",18,accent,true);
-        titleRow.addView(brand);titleRow.addView(extended);
-        View spacer=new View(this);
-        titleRow.addView(spacer,new LinearLayout.LayoutParams(0,dp(2),1));
-        Button theme=button(light?"Dark theme":"Light theme",false);
-        theme.setOnClickListener(v->{prefs.edit().putBoolean("light",!light).apply();recreate();});
-        Button help=button("Help",false);
-        help.setOnClickListener(v->showHelp());
-        titleRow.addView(theme,new LinearLayout.LayoutParams(dp(100),dp(35)));
-        LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(dp(68),dp(35));hp.leftMargin=dp(7);
-        titleRow.addView(help,hp);
-        root.addView(titleRow,new LinearLayout.LayoutParams(-1,dp(38)));
-
-        LinearLayout info=new LinearLayout(this);info.setGravity(Gravity.CENTER_VERTICAL);
-        status=text("Waiting for Xbox",13,muted,true);
-        info.addView(status,new LinearLayout.LayoutParams(dp(160),dp(35)));
-        ip=text("Xbox address: "+LanAddress.find()+":26401",13,accent,true);
-        info.addView(ip,new LinearLayout.LayoutParams(0,dp(35),1));
-        Button copy=button("Copy IP",false);copy.setOnClickListener(v->{
-            ((android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(
-                ClipData.newPlainText("Oberon IP",LanAddress.find()));
-            Toast.makeText(this,"IP copied",Toast.LENGTH_SHORT).show();
-        });
-        info.addView(copy,new LinearLayout.LayoutParams(dp(80),dp(37)));
-        connect=button("START SERVER",true);
-        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(135),dp(37));cp.leftMargin=dp(8);
-        info.addView(connect,cp);
-        connect.setOnClickListener(v->toggleServer());
-        root.addView(info,new LinearLayout.LayoutParams(-1,dp(44)));
-
-        LinearLayout controlRow=new LinearLayout(this);controlRow.setGravity(Gravity.CENTER_VERTICAL);
-        touchMode=button("Touch controls",!input.usePhysical());
-        hardwareMode=button("Bluetooth / USB",input.usePhysical());
-        touchMode.setOnClickListener(v->setMode(false));
-        hardwareMode.setOnClickListener(v->setMode(true));
-        controlRow.addView(touchMode,new LinearLayout.LayoutParams(dp(130),dp(35)));
-        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(dp(145),dp(35));bp.leftMargin=dp(7);
-        controlRow.addView(hardwareMode,bp);
-        controllerName=text("",12,muted,false);
-        LinearLayout.LayoutParams label=new LinearLayout.LayoutParams(0,dp(35),1);label.leftMargin=dp(16);
-        controlRow.addView(controllerName,label);
-        Button settings=button("Settings",false);settings.setOnClickListener(v->settings());
-        controlRow.addView(settings,new LinearLayout.LayoutParams(dp(90),dp(35)));
-        root.addView(controlRow,new LinearLayout.LayoutParams(-1,dp(43)));
-
-        gamepadView=new VirtualGamepadView(this,input);gamepadView.setLight(light);
-        physicalInfo=text("BLUETOOTH / USB GAMEPAD\\n\\nConnect a gamepad to Android, then press a button.\\n\\nAnalog sticks, face buttons, triggers and the D-pad are supported when the Android driver exposes them.",19,fg,true);
-        physicalInfo.setGravity(Gravity.CENTER);
-        physicalInfo.setBackground(background(surface,14));
-        root.addView(gamepadView,new LinearLayout.LayoutParams(-1,0,1));
-        root.addView(physicalInfo,new LinearLayout.LayoutParams(-1,0,1));
-        TextView footer=text("Local Wi-Fi only  •  Xbox needs the original Oberon receiver  •  Port 26401",10,muted,false);
-        footer.setGravity(Gravity.CENTER);
-        root.addView(footer,new LinearLayout.LayoutParams(-1,dp(23)));
-        updateMode();
-    }
-    private void setMode(boolean physical){
-        input.reset();input.setUsePhysical(physical);
-        prefs.edit().putBoolean("physical",physical).apply();
-        updateMode();
-    }
-    private void updateMode(){
-        if(gamepadView!=null){
-            gamepadView.setVisibility(input.usePhysical()?View.GONE:View.VISIBLE);
-            if(input.usePhysical())gamepadView.release();
-            physicalInfo.setVisibility(input.usePhysical()?View.VISIBLE:View.GONE);
+    private String detectController(){
+        for(int id:InputDevice.getDeviceIds()){
+            InputDevice pad=InputDevice.getDevice(id);
+            if(pad==null||pad.isVirtual())continue;
+            int sources=pad.getSources();
+            if((sources&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD ||
+               (sources&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK)
+                return pad.getName();
         }
-        if(touchMode!=null){
-            touchMode.setTextColor(input.usePhysical()?fg:bg);
-            touchMode.setBackground(background(input.usePhysical()?surface:accent,8));
-            hardwareMode.setTextColor(input.usePhysical()?bg:fg);
-            hardwareMode.setBackground(background(input.usePhysical()?accent:surface,8));
+        return null;
+    }
+    @Override public void onCreate(Bundle state){
+        super.onCreate(state);
+        prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
+        ui=MobileUi.from(this);
+        input.setUsePhysical(true);
+        input.setDeadzone(prefs.getInt("deadzone",10)/100f);
+        getWindow().setStatusBarColor(ui.bg);
+        getWindow().setNavigationBarColor(ui.bg);
+        render();
+        if(state==null&&!prefs.getBoolean("default_physical",true)){
+            autoTouchLaunched=true;
+            handler.postDelayed(this::openTouch,270);
+        }
+    }
+    private TextView text(String value,int size,boolean bold,int color) {
+        return ui.label(value,size,bold,color);
+    }
+    private void render(){
+        boolean wide=getResources().getConfiguration().orientation==
+            Configuration.ORIENTATION_LANDSCAPE;
+        ScrollView scroller=new ScrollView(this);
+        scroller.setFillViewport(true);
+        scroller.setBackgroundColor(ui.bg);
+        scroller.setClipToPadding(false);
+        LinearLayout whole=new LinearLayout(this);
+        whole.setOrientation(LinearLayout.VERTICAL);
+        whole.setPadding(d(18),d(13),d(18),d(25));
+        scroller.addView(whole);
+        setContentView(scroller);
+
+        LinearLayout header=new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout branding=new LinearLayout(this);
+        branding.setOrientation(LinearLayout.VERTICAL);
+        TextView oberon=text("OBERON",wide?20:25,true,ui.text);
+        TextView extended=text("EXTENDED MOBILE",wide?19:21,true,ui.accent);
+        branding.addView(oberon);branding.addView(extended);
+        header.addView(branding,new LinearLayout.LayoutParams(0,-2,1f));
+        Button settings=ui.button("⚙  Configurações",false);
+        settings.setOnClickListener(v->openSettings());
+        header.addView(settings,new LinearLayout.LayoutParams(d(wide?160:144),d(49)));
+        whole.addView(header,ui.margin(-1,-2,0));
+
+        TextView subtitle=text("Seu celular como controle remoto do Xbox.",13,false,ui.muted);
+        whole.addView(subtitle,ui.margin(-1,d(35),2));
+
+        LinearLayout sections=new LinearLayout(this);
+        sections.setOrientation(wide?LinearLayout.HORIZONTAL:LinearLayout.VERTICAL);
+        whole.addView(sections,ui.margin(-1,-2,8));
+        LinearLayout left=new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout right=new LinearLayout(this);
+        right.setOrientation(LinearLayout.VERTICAL);
+        if(wide){
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);
+            lp.rightMargin=d(7);sections.addView(left,lp);
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-2,1);
+            rp.leftMargin=d(7);sections.addView(right,rp);
+        }else {
+            sections.addView(left,new LinearLayout.LayoutParams(-1,-2));
+            sections.addView(right,new LinearLayout.LayoutParams(-1,-2));
+        }
+
+        LinearLayout serverCard=ui.card(true);
+        serverCard.addView(text("CONEXÃO LOCAL",13,true,ui.accent));
+        status=text("Servidor desligado",21,true,ui.text);
+        serverCard.addView(status,ui.margin(-1,d(42),6));
+        connectionCount=text("Aguardando conexão",13,false,ui.muted);
+        serverCard.addView(connectionCount);
+        serverCard.addView(text("Endereço para inserir no Xbox",13,false,ui.muted),
+            ui.margin(-1,d(29),12));
+        ip=text(LanAddress.find()+":26401",21,true,ui.text);
+        ip.setTextIsSelectable(true);
+        serverCard.addView(ip,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout actions=new LinearLayout(this);
+        actions.setGravity(Gravity.CENTER_VERTICAL);
+        Button copy=ui.button("Copiar IP",false);
+        copy.setOnClickListener(v->{
+            ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE))
+                .setPrimaryClip(ClipData.newPlainText("Oberon IP",LanAddress.find()));
+            android.widget.Toast.makeText(this,"IP copiado",android.widget.Toast.LENGTH_SHORT).show();
+        });
+        actions.addView(copy,new LinearLayout.LayoutParams(0,d(48),1));
+        connection=ui.button("Iniciar servidor",true);
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,d(48),1.5f);
+        cp.leftMargin=d(9);actions.addView(connection,cp);
+        connection.setOnClickListener(v->toggleServer());
+        serverCard.addView(actions,ui.margin(-1,d(50),14));
+        left.addView(serverCard,ui.margin(-1,-2,6));
+
+        LinearLayout gamepadCard=ui.card(true);
+        gamepadCard.addView(text("BLUETOOTH / USB",13,true,ui.accent));
+        gamepadCard.addView(text("Controle físico",20,true,ui.text),
+            ui.margin(-1,d(38),5));
+        device=text("Procurando controles...",14,false,ui.muted);
+        device.setMaxLines(3);
+        gamepadCard.addView(device,ui.margin(-1,-2,2));
+        gamepadCard.addView(text("Conecte um controle ao Android. Botões e analógicos serão lidos enquanto este aplicativo estiver aberto.",13,false,ui.muted),
+            ui.margin(-1,-2,11));
+        right.addView(gamepadCard,ui.margin(-1,-2,6));
+
+        LinearLayout touchCard=ui.card(true);
+        touchCard.addView(text("CONTROLE NA TELA",13,true,ui.accent));
+        touchCard.addView(text("Jogue usando o toque",20,true,ui.text),
+            ui.margin(-1,d(36),6));
+        touchCard.addView(text("Abra os controles em tela cheia, na vertical ou horizontal. Vários dedos podem ser usados ao mesmo tempo.",13,false,ui.muted));
+        Button open=ui.button("Abrir controle virtual  ↗",true);
+        open.setOnClickListener(v->openTouch());
+        touchCard.addView(open,ui.margin(-1,d(54),14));
+        right.addView(touchCard,ui.margin(-1,-2,6));
+
+        LinearLayout helper=ui.card(true);
+        helper.addView(text("COMO CONECTAR",13,true,ui.accent));
+        helper.addView(text("1. Coloque o celular e o Xbox na mesma rede Wi-Fi.\n2. Inicie o servidor aqui.\n3. Abra o Oberon original no Xbox.\n4. Digite o IP do celular e conecte.",14,false,ui.text),
+            ui.margin(-1,-2,8));
+        Button help=ui.button("Ajuda e explicações",false);
+        help.setOnClickListener(v->help());
+        helper.addView(help,ui.margin(-1,d(45),13));
+        left.addView(helper,ui.margin(-1,-2,7));
+
+        TextView foot=text("Oberon Extended Mobile  ·  Alpha 2  ·  Rede local",12,false,ui.muted);
+        foot.setGravity(Gravity.CENTER);
+        whole.addView(foot,ui.margin(-1,d(43),2));
+
+        if(prefs.getBoolean("animations",true)) {
+            sections.setAlpha(0);sections.setTranslationY(d(18));
+            sections.animate().alpha(1).translationY(0).setDuration(290).start();
         }
     }
     private void toggleServer(){
-        if(MobileService.running()) {
+        if(MobileService.running()){
             startService(new Intent(this,MobileService.class).setAction(MobileService.ACTION_STOP));
         }else{
-            String ipText=LanAddress.find();
-            if(ipText.startsWith("No local")){
-                Toast.makeText(this,"Connect to the same Wi-Fi as Xbox first",Toast.LENGTH_LONG).show();
+            if(LanAddress.find().startsWith("No local")){
+                android.widget.Toast.makeText(this,"Conecte ao Wi-Fi local primeiro",android.widget.Toast.LENGTH_LONG).show();
                 return;
             }
-            Intent start=new Intent(this,MobileService.class).setAction(MobileService.ACTION_START);
-            if(Build.VERSION.SDK_INT>=26)startForegroundService(start);
-            else startService(start);
+            Intent intent=new Intent(this,MobileService.class).setAction(MobileService.ACTION_START);
+            if(Build.VERSION.SDK_INT>=26)startForegroundService(intent);
+            else startService(intent);
         }
-        // The lifecycle ticker already refreshes status while visible.
+        handler.postDelayed(updater,200);
     }
-    private void showHelp(){
+    private void openTouch() {
+        input.reset();
+        startActivity(new Intent(this,TouchActivity.class));
+        MobileUi.enter(this);
+    }
+    private void openSettings() {
+        startActivity(new Intent(this,SettingsActivity.class));
+        MobileUi.enter(this);
+    }
+    private void help(){
         new AlertDialog.Builder(this)
-            .setTitle("Connect Android to your Xbox")
-            .setMessage("1. Connect your phone and Xbox to the same Wi-Fi.\n\n"+
-                "2. Tap START SERVER here.\n\n"+
-                "3. Open the original Oberon Remote Input app on your Xbox.\n\n"+
-                "4. Enter the IP shown at the top of this screen, with port 26401.\n\n"+
-                "5. Tap Connect on Xbox. Use the on-screen gamepad or select Bluetooth / USB.\n\n"+
-                "The Xbox receiver is still required. This app does not inject input into the Xbox by itself.")
-            .setPositiveButton("Got it",null).show();
+            .setTitle("Como conectar ao Xbox")
+            .setMessage("1. Conecte o celular e o Xbox à mesma rede Wi-Fi.\n\n"+
+                "2. Toque em Iniciar servidor.\n\n"+
+                "3. Abra o aplicativo Oberon Remote Input original no Xbox.\n\n"+
+                "4. Digite o endereço IP mostrado aqui (porta 26401).\n\n"+
+                "5. Use um controle Bluetooth/USB conectado ao celular ou abra o controle virtual.\n\n"+
+                "A instalação do aplicativo receptor no Xbox ainda é obrigatória.")
+            .setPositiveButton("Entendi",null).show();
     }
-    private void settings(){
-        LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(25),dp(8),dp(25),dp(8));
-        TextView label=text("Analog stick deadzone",15,fg,true);content.addView(label);
-        SeekBar seek=new SeekBar(this);seek.setMax(35);seek.setProgress(prefs.getInt("deadzone",10));
-        content.addView(seek);
-        TextView level=text("Deadzone: "+seek.getProgress()+"%",13,muted,false);
-        content.addView(level);
-        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            @Override public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
-                input.setDeadzone(progress/100f);
-                level.setText("Deadzone: "+progress+"%");
-                prefs.edit().putInt("deadzone",progress).apply();
-            }
-            @Override public void onStartTrackingTouch(SeekBar bar){}
-            @Override public void onStopTrackingTouch(SeekBar bar){}
-        });
-        TextView notes=text("Physical controllers are read while this app is in the foreground. "+
-            "The foreground service keeps the local Xbox WebSocket connection open.",12,muted,false);
-        notes.setPadding(0,dp(14),0,dp(6));content.addView(notes);
-        new AlertDialog.Builder(this).setTitle("Oberon Extended Mobile")
-            .setView(content)
-            .setNeutralButton("Restore defaults",(d,w)->{
-                prefs.edit().clear().apply();input.setDeadzone(.10f);input.reset();recreate();
-            }).setPositiveButton("Close",null).show();
+    @Override protected void onResume(){
+        super.onResume();
+        input.setUsePhysical(true);
+        MobileUi next=MobileUi.from(this);
+        if(!next.theme.equals(ui.theme)){recreate();return;}
+        handler.removeCallbacks(updater);
+        handler.post(updater);
     }
-    @Override protected void onResume(){super.onResume();handler.post(ticker);}
     @Override protected void onPause(){
-        handler.removeCallbacks(ticker);
-        if(gamepadView!=null)gamepadView.release();
-        input.reset();super.onPause();
+        handler.removeCallbacks(updater);
+        input.reset();
+        super.onPause();
     }
-    private boolean isGamepad(KeyEvent e){
-        int source=e.getSource();
-        return ((source&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD)||
-            ((source&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK);
+    private boolean gamepadSource(int source){
+        return (source&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD ||
+            (source&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK;
     }
     @Override public boolean dispatchKeyEvent(KeyEvent e){
-        if(isGamepad(e)){
+        if(gamepadSource(e.getSource())){
             int bit=mapButton(e.getKeyCode());
             if(bit!=0){
                 if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
                 input.setPhysicalButton(bit,e.getAction()==KeyEvent.ACTION_DOWN);
                 return true;
             }
-            if(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2 || e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_R2){
-                if(e.getAction()==KeyEvent.ACTION_DOWN||e.getAction()==KeyEvent.ACTION_UP){
-                    float p=e.getAction()==KeyEvent.ACTION_DOWN?1:0;
-                    input.setPhysicalDigitalTrigger(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2,p);
-                    return true;
-                }
+            if(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2 ||
+                e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_R2) {
+                input.setPhysicalDigitalTrigger(e.getKeyCode()==KeyEvent.KEYCODE_BUTTON_L2,
+                    e.getAction()==KeyEvent.ACTION_DOWN?1:0);
+                return true;
             }
         }
         return super.dispatchKeyEvent(e);
     }
-    private static int mapButton(int key){
-        switch(key){
+    private static int mapButton(int key) {
+        switch(key) {
             case KeyEvent.KEYCODE_BUTTON_A:return InputState.A;
             case KeyEvent.KEYCODE_BUTTON_B:return InputState.B;
             case KeyEvent.KEYCODE_BUTTON_X:return InputState.X;
@@ -259,13 +287,15 @@ public final class MainActivity extends Activity {
     }
     @Override public boolean onGenericMotionEvent(MotionEvent e){
         if((e.getSource()&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK &&
-            e.getAction()==MotionEvent.ACTION_MOVE){
+            e.getAction()==MotionEvent.ACTION_MOVE) {
             if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
-            InputDevice dev=e.getDevice();
-            float rx=axis(e,dev,MotionEvent.AXIS_Z,MotionEvent.AXIS_RX);
-            float ry=axis(e,dev,MotionEvent.AXIS_RZ,MotionEvent.AXIS_RY);
-            float lt=Math.max(e.getAxisValue(MotionEvent.AXIS_LTRIGGER),e.getAxisValue(MotionEvent.AXIS_BRAKE));
-            float rt=Math.max(e.getAxisValue(MotionEvent.AXIS_RTRIGGER),e.getAxisValue(MotionEvent.AXIS_GAS));
+            InputDevice source=e.getDevice();
+            float rx=axis(e,source,MotionEvent.AXIS_Z,MotionEvent.AXIS_RX);
+            float ry=axis(e,source,MotionEvent.AXIS_RZ,MotionEvent.AXIS_RY);
+            float lt=Math.max(e.getAxisValue(MotionEvent.AXIS_LTRIGGER),
+                e.getAxisValue(MotionEvent.AXIS_BRAKE));
+            float rt=Math.max(e.getAxisValue(MotionEvent.AXIS_RTRIGGER),
+                e.getAxisValue(MotionEvent.AXIS_GAS));
             input.setPhysicalAxes(e.getAxisValue(MotionEvent.AXIS_X),
                 e.getAxisValue(MotionEvent.AXIS_Y),rx,ry,lt,rt);
             input.setPhysicalHat(e.getAxisValue(MotionEvent.AXIS_HAT_X),
@@ -274,8 +304,8 @@ public final class MainActivity extends Activity {
         }
         return super.onGenericMotionEvent(e);
     }
-    private static float axis(MotionEvent e,InputDevice d,int primary,int fallback){
-        return d!=null&&d.getMotionRange(primary,InputDevice.SOURCE_JOYSTICK)!=null
+    private static float axis(MotionEvent e,InputDevice device,int primary,int fallback){
+        return device!=null&&device.getMotionRange(primary,InputDevice.SOURCE_JOYSTICK)!=null
             ?e.getAxisValue(primary):e.getAxisValue(fallback);
     }
 }
