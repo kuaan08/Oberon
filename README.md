@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/oberon-extended-mobile-icon.svg" alt="Oberon Extended Mobile Android app icon" width="136" height="136">
+
 # OBERON **EXTENDED MOBILE**
 
 **Turn your Android phone into a controller for your Xbox.**
@@ -7,11 +9,11 @@
 An Android edition of the Oberon Remote Input experience, with a green Xbox-inspired interface, on-screen controls, and support for compatible Bluetooth/USB controllers.
 
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](https://github.com/kuaan08/Oberon/releases)
-[![Version](https://img.shields.io/badge/version-0.5.0--alpha.5-73EE97)](https://github.com/kuaan08/Oberon/releases)
+[![Version](https://img.shields.io/badge/version-0.6.0--alpha.6-73EE97)](https://github.com/kuaan08/Oberon/releases)
 [![Status](https://img.shields.io/badge/channel-Alpha%20%2F%20Pre--release-orange)](https://github.com/kuaan08/Oberon/releases)
 [![Source](https://img.shields.io/badge/source-open-blue)](LICENSE)
 
-### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.5.0-alpha.5) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
+### [Download for Android](https://github.com/kuaan08/Oberon/releases) · [Latest Mobile Alpha](https://github.com/kuaan08/Oberon/releases/tag/mobile-v0.6.0-alpha.6) · [Original Oberon](https://github.com/SamsidParty/OberonRemote)
 
 </div>
 
@@ -46,21 +48,30 @@ This Android project is an experimental extension of the Oberon ecosystem. It is
 
 **Requirements:** Android **8.0 or newer**, a phone and Xbox on the same local network, and the original Oberon app installed on the Xbox. A Bluetooth/USB controller is optional if you prefer the on-screen controls.
 
-> **Development status:** Alpha 5 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
+> **Development status:** Alpha 6 is a test build, not a fully verified stable release. The current APK is debug-signed. If Android reports a signature conflict when updating from an earlier alpha, you may need to uninstall the old preview first (back up your preferences if needed).
+
+## Languages
+
+The Android app provides an in-app **Language** selector under **Settings → Language / Idioma**. You can follow your phone's language automatically or choose one manually. The selector includes:
+
+**English, Portuguese, Spanish, French, German, Italian, Russian, Chinese, Japanese, Korean, Hindi, Arabic, Turkish, Indonesian, Dutch, Polish, Ukrainian, Vietnamese and Thai.**
+
+The principal navigation and controls have translations for these languages. Some advanced help and diagnostic messages may still appear in English (or in the original Portuguese source where translations are incomplete). Other Android system languages use English as the fallback for strings with available English translations. The translations are bundled inside the APK and work offline; no translation service or account is required.
 
 ## Connect to Xbox — four easy steps
 
 1. **Same Wi-Fi.** Connect both your phone and Xbox to the same trusted home network.
-2. **Start on Android.** Tap **Iniciar servidor** (Start server). The app shows your phone's local IP address, for example `192.168.1.20:26401`. Use the address **shown on your own device**.
+2. **Start on Android.** Tap **Start server** (labeled in your selected language). The app shows your phone's local IP address, for example `192.168.1.20:26401`. Use the address **shown on your own device**.
 3. **Connect on Xbox.** Open the **original Oberon Remote Input** application on Xbox, enter your phone's displayed IP/port and connect.
-4. **Choose your controls.** Play using a connected Bluetooth/USB controller, or tap **Abrir controle virtual** for full-screen touch controls.
+4. **Choose your controls.** Play using a connected Bluetooth/USB controller, or tap **Open virtual controller** for full-screen touch controls.
 
-The dashboard shows whether a client is connected. You can stop the local server with **Parar servidor**. If the Xbox cannot connect, verify the Wi-Fi network, the IP address, and whether the server is active.
+The dashboard shows whether a client is connected. You can stop the local server with **Stop server**. If the Xbox cannot connect, verify the Wi-Fi network, the IP address, and whether the server is active.
 
 ## Features
 
 | Area | What you can do |
 | --- | --- |
+| **Languages** | Follow your Android system language or pick one of 19 app languages; see the fallback policy above. |
 | **Android dashboard** | Portrait/landscape layout, server start/stop, local IP, connection status and copy-IP button. |
 | **Physical gamepads** | Use up to four USB/Bluetooth gamepads in separate Xbox slots when Android delivers their events. Identification covers Xbox-like, PlayStation-like, Nintendo and generic devices. |
 | **Full-screen touch** | Two analog sticks, ABXY, D-pad, triggers, shoulders, View/Menu/Guide and independent multi-touch pointer tracking. |
@@ -79,7 +90,7 @@ The dashboard shows whether a client is connected. You can stop the local server
 
 **Settings:** Switch themes, change portrait/landscape preferences, resize the virtual controller, adjust sensitivity and animations, choose a preferred controller, or restore default settings. Experimental options are separated from the normal experience.
 
-**Touch controller:** The gameplay interface fills the screen instead of sharing space with menus. A **Voltar** (Back) button returns you to the dashboard. Multi-touch allows holding a stick while pressing other buttons.
+**Touch controller:** The gameplay interface fills the screen instead of sharing space with menus. A **Back** button returns you to the dashboard. Multi-touch allows holding a stick while pressing other buttons.
 
 ### Diagnostics and latency: what the numbers mean
 
@@ -98,10 +109,10 @@ Alpha 5 includes an **optional ROOT experimental reader** that uses Android's `g
 To test it:
 
 1. Pair the physical controller with Android before starting the server.
-2. Open **Configurações → Experimental → Captura em segundo plano**. Choose **ROOT (su/Magisk)** on rooted phones or **Shizuku (ADB)** on unrooted phones that have started Shizuku.
+2. Open **Settings → Experimental → Background capture**. Choose **ROOT (su/Magisk)** on rooted phones or **Shizuku (ADB)** on unrooted phones that have started Shizuku.
 3. Read the permission warning. With ROOT, grant access in Magisk. With Shizuku, install and start the Shizuku service (wireless debugging on Android 11+) and authorize the connection.
 4. Stop and restart the Xbox server after changing the capture mode.
-5. Check **Modo detalhado** for capture status, then minimize the app and test your controller with the Xbox.
+5. Check **Detailed mode** for capture status, then minimize the app and test your controller with the Xbox.
 
 **Important:** ROOT requires superuser privileges; Shizuku runs with ADB/shell privileges and **does not grant root**. Both modes are **off by default** and are **unverified with physical controllers**. Shizuku may show **permission denied** for /dev/input on devices whose SELinux or filesystem permissions block shell access. SELinux restrictions, an unsupported driver, different Linux button/axis mappings or Android power management may prevent it from working. It does not work on ordinary unrooted Android devices, and it is not a guarantee of global input capture on every device. Only the selected gamepad event node is intended to be read, not the touch screen or general keyboard. The app does not store a raw input log.
 
@@ -110,9 +121,9 @@ To test it:
 | Problem | What to try |
 | --- | --- |
 | The Xbox cannot connect | Check that both devices are on the same Wi-Fi, Android's server is running, and the Xbox is using the correct IP and port `26401`. |
-| The physical controller is not detected | Pair it in Android settings, reconnect USB/Bluetooth, and check **Diagnóstico**. Try Experimental only if required. |
+| The physical controller is not detected | Pair it in Android settings, reconnect USB/Bluetooth, and check **Diagnostics**. Try Experimental only if required. |
 | The buttons are mapped incorrectly | Use Experimental options for alternative right-stick axes, A/B swap or inverted Y. |
-| Touch controls are too small | Open **Configurações → Tela do controle** and resize the sticks and buttons; use portrait or landscape to suit the phone. |
+| Touch controls are too small | Open **Settings → Virtual gamepad** and resize the sticks and buttons; use portrait or landscape to suit the phone. |
 | An update cannot install | An older preview may have a different debug signature. You may need to uninstall that build before installing the new one. |
 | The battery is displayed as unknown | Some generic controllers do not expose their battery status through Android's driver. |
 
@@ -143,6 +154,10 @@ gradle :app:testDebugUnitTest :app:assembleDebug
 ```
 
 The resulting development APK is generated at `mobile/app/build/outputs/apk/debug/app-debug.apk`. Most users should simply download the APK from **[Releases](https://github.com/kuaan08/Oberon/releases)** rather than build from source.
+
+### App icon
+
+The logo at the top of this README is the **same vector symbol** used for the Android launcher icon, maintained in [`docs/oberon-extended-mobile-icon.svg`](docs/oberon-extended-mobile-icon.svg). It represents Oberon Extended Mobile, which is an Xbox input sender rather than an emulator.
 
 ## Credits and acknowledgments
 
