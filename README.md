@@ -1,55 +1,64 @@
 <div align="center">
   <h1>Oberon Extended Mobile</h1>
-  <p>Your Android phone becomes a remote controller for Xbox, through the original Oberon receiver.</p>
-  <p><strong>Native Android · Portrait and Landscape · Bluetooth / USB · Full-screen touch</strong></p>
+  <p>Android gamepad transmitter for the original Oberon Remote Input Xbox receiver.</p>
+  <p><strong>Native Android • Bluetooth / USB • Full-screen touch • Portrait and landscape</strong></p>
 </div>
 
 ---
 
-## Download for Android
+## Download the Android APK
 
-Get the current **Alpha 2** APK from [GitHub Actions](https://github.com/kuaan08/Oberon/actions/workflows/oberon-extended-mobile.yml). Open a successful run, then download the **Oberon Extended Mobile Alpha2 Debug APK** artifact. Unzip it, and install the enclosed APK on Android 8.0+.
+This project is in **Alpha 3**. Download the Android debug build from a successful [GitHub Actions run](https://github.com/kuaan08/Oberon/actions/workflows/oberon-extended-mobile.yml). Select **Oberon Extended Mobile Alpha3 Debug APK**, extract the ZIP, and install the enclosed APK on Android 8.0 or newer.
 
-The build is debug-signed for testing. No separate Windows PC is required for the mobile sender.
+The Android sender does not require the Windows version. The existing original Oberon Xbox receiver is still required.
 
-## How to connect
+## Connect your Xbox
 
-1. Put the Android device and Xbox on the same trusted Wi-Fi network.
-2. Connect a Bluetooth or USB gamepad to Android if you wish to use a physical controller.
-3. Open Oberon Extended Mobile. It starts on the **Bluetooth / USB** dashboard by default.
-4. Tap **Iniciar servidor** (Start server).
-5. Open the original Oberon Remote Input receiver on the Xbox.
-6. Enter the Android IP address displayed by the app, including port `26401`, and connect.
+1. Put your phone and Xbox on the same trusted local Wi-Fi network.
+2. Pair a supported USB or Bluetooth controller with Android, or open the touch controller.
+3. Open Oberon Extended Mobile and select **Iniciar servidor**.
+4. On Xbox, open the original Oberon Remote Input application.
+5. Enter the Android device IP and port **26401** shown in the app and connect.
 
-The Xbox receiver is necessary. Android sends inputs over a local WebSocket and cannot inject Xbox input without the receiving application.
+## Alpha 3 features
 
-## What's new in Alpha 2
+**Responsive dashboard.** The home screen works vertically or horizontally. Bluetooth/USB is the default input mode. A separate full-screen touch controller supports portrait and landscape layouts.
 
-The app has a redesigned dashboard that automatically fits **portrait and landscape** screens. The default is Bluetooth/USB, with a simple controller-detection area and a separate connection panel.
+**Fully themed interface.** Choose Xbox Green, Xbox Light, Midnight, Graphite, Violet, or Ocean. The help and confirmation dialogs follow the selected Extended theme. Animations and touch vibration are optional.
 
-**Touch controls now fill the whole screen** instead of appearing as a tiny element in the dashboard. Tap **Abrir controle virtual** to open them, and **Voltar** to return. A separate touch-controller layout is available for portrait and landscape:
+**Two independent orientation settings.** Set the orientation of the **whole Android app** to Auto, Vertical or Horizontal, and choose Vertical or Horizontal separately for the **virtual touch controller**.
 
-- Portrait: tall handheld layout, with two analog sticks, face buttons, D-pad, shoulders and triggers.
-- Landscape: full-width layout with independent stick, D-pad, face-button and trigger hit zones.
-- Pointer-aware multi-touch; hold sticks and multiple buttons simultaneously.
-- Animated press feedback and optional haptic vibration.
+**Editable virtual controls.** Adjust overall controller scale, individual analog-stick size, face-button and D-pad size, and control opacity. Multi-touch lets sticks and face buttons be pressed simultaneously.
 
-**Settings is a full, dedicated page** instead of a modal popup. It includes six themes (Xbox Green, Xbox Light, Midnight, Graphite, Violet and Ocean), animation and vibration preferences, a controller button-size slider, touch orientation, analog deadzone and reset-to-defaults.
+**Detailed mode and Diagnostics.** Optional live stats on the home screen, plus a dedicated diagnostics screen showing connected controllers, likely controller family, Android device identifiers, axis capabilities, battery if provided by the driver, connection status, packet counters, and intervals between Xbox requests. **Request interval is not Xbox round-trip latency or ping.** A controller battery displayed as unavailable or unknown does not mean it is empty.
 
-The `\\n` text-escape issue from Alpha 1 is resolved: text now wraps as real lines rather than showing literal escape characters.
+**Experimental compatibility.** Choose a particular Android input device, switch the right stick between Z/RZ and RX/RY mappings, swap A/B buttons, invert stick Y, and toggle TCP_NODELAY to compare local socket behavior. The compatibility options cannot guarantee every generic controller will work. Restart the server after changing TCP_NODELAY.
 
-## Known limitations
+**Updates.** The Updates screen checks public [GitHub Releases](https://github.com/kuaan08/Oberon/releases), including preview releases, and provides official download links when applicable. If no release has been published, it points to the development builds on GitHub Actions. The app never silently installs APKs.
 
-This is still an **experimental alpha**, not a complete replacement for the desktop Extended application. The transmitter supports one Xbox controller slot per connection. Real-controller input is read while the Android dashboard is in the foreground. Background service functionality keeps the WebSocket listening, but cannot capture controller input when Android stops sending gamepad events to the app. Rumble is not implemented.
+**Connection service.** The WebSocket server runs in a foreground service with a persistent notification. Android may not deliver hardware controller events while the UI is backgrounded.
 
-The application has passed automated Android compilation and protocol tests when a successful build is available. This is not proof of compatibility with every controller, Android model or Xbox configuration. Do not expose port `26401` on the public internet.
+## Current limitations
 
-## Source and credits
+This is a test build, not a release tested with every physical device or Xbox. Only one controller slot is transmitted, physical gamepad input requires Android to send input events to the app, and gamepad rumble is not yet implemented. Real Xbox latency cannot be measured using the current request/response protocol. The TCP_NODELAY toggle only affects the local TCP socket.
 
-- Android application: [mobile/](mobile/)
-- Original Xbox receiver for compatibility reference: [Oberon/](Oberon/)
-- Developer workflow: [.github/workflows/oberon-extended-mobile.yml](.github/workflows/oberon-extended-mobile.yml)
-- Original Oberon Remote Input: [SamsidParty](https://github.com/SamsidParty/OberonRemote) and contributors
-- Extended maintenance and branding: [katakishi0](https://github.com/katakishi0)
+Use the server on a trusted local network only. Do not expose port `26401` to the internet.
 
-See [LICENSE](LICENSE) for the original project's attribution and source-disclosure requirements. Oberon Extended Mobile is an independent Android transmitter and is not affiliated with Microsoft.
+## Building from source
+
+Install JDK 17, Android SDK API 35 and Gradle 8.11.1, then run:
+
+```bash
+cd mobile
+gradle :app:testDebugUnitTest :app:assembleDebug
+```
+
+APK output: `mobile/app/build/outputs/apk/debug/app-debug.apk`. Debug signing is intended for testing, not production distribution.
+
+## Credits
+
+- Original Oberon Remote Input: [SamsidParty](https://github.com/SamsidParty/OberonRemote) and contributors.
+- Extended project maintenance: [katakishi0](https://github.com/katakishi0).
+- Android source: [mobile/](mobile/); original Xbox receiver protocol/reference: [Oberon/](Oberon/).
+
+See [LICENSE](LICENSE) for upstream attribution, modification and source-code obligations. Oberon Extended Mobile is independent of Microsoft and is not affiliated with Xbox.
