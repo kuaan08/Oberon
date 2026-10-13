@@ -302,12 +302,16 @@ public final class SettingsActivity extends Activity {
         toggle.setShowText(false);
         toggle.setChecked(prefs.getBoolean("experimental_root_background",false));
         toggle.setThumbTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        final boolean[] internalUpdate={false};
         toggle.setOnCheckedChangeListener((control,checked)->{
+            if(internalUpdate[0])return;
             if(!checked){
                 prefs.edit().putBoolean("experimental_root_background",false).apply();
                 return;
             }
+            internalUpdate[0]=true;
             toggle.setChecked(false);
+            internalUpdate[0]=false;
             ExtendedDialog.confirm(this,"Captura experimental ROOT",
                 "O Android não entrega analógicos de controle a aplicativos sem foco. "+
                 "Esse modo usa su/getevent para ler exclusivamente um controle físico "+
@@ -319,7 +323,9 @@ public final class SettingsActivity extends Activity {
                 "Ative e reinicie o servidor para testar.",
                 "Ativar ROOT",()->{
                     prefs.edit().putBoolean("experimental_root_background",true).apply();
+                    internalUpdate[0]=true;
                     toggle.setChecked(true);
+                    internalUpdate[0]=false;
                 });
         });
         row.addView(toggle);
