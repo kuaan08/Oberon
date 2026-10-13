@@ -22,8 +22,7 @@ public final class TouchActivity extends Activity {
         super.onCreate(state);
         SharedPreferences prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
         String orientation=prefs.getString("touch_orientation","landscape");
-        setRequestedOrientation("portrait".equals(orientation)
-            ?ActivityInfo.SCREEN_ORIENTATION_PORTRAIT:ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        OrientationPrefs.apply(this,"touch_orientation","landscape");
         MobileUi.immersive(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -35,6 +34,9 @@ public final class TouchActivity extends Activity {
         pad.setHaptics(prefs.getBoolean("haptics",true));
         pad.setAnimations(prefs.getBoolean("animations",true));
         pad.setScale(prefs.getInt("touch_scale",100)/100f);
+        pad.setIndividualSizes(prefs.getInt("touch_stick_scale",100)/100f,
+            prefs.getInt("touch_face_scale",100)/100f);
+        pad.setOpacity(prefs.getInt("touch_opacity",100));
         root.addView(pad,new FrameLayout.LayoutParams(-1,-1));
 
         // The back control stays above the pad in both orientations and is
