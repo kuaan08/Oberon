@@ -90,6 +90,7 @@ jobs:
           - Full-screen virtual gamepad in portrait or landscape and customizable controls.
           - Extended themes (including AMOLED Black), custom dialogs, haptics and animations.
           - Controller diagnostics, optional battery information and experimental mappings.
+          - New in Alpha 4: opt-in ROOT-only background gamepad capture for buttons and analog axes.
           - Local WebSocket input sender on port 26401 and in-app update checks.
 
           ### Connect to Xbox
@@ -99,7 +100,10 @@ jobs:
 
           **Limitations:** The Android sender currently transmits one controller slot.
           Physical controllers must be supported by Android; rumble and measured end-to-end Xbox
-          latency are not implemented. This is an experimental debug-signed APK.
+          latency are not implemented. Standard Android controller capture stops when the app
+          loses focus. ROOT background capture is experimental, disabled by default, explicitly
+          requires su authorization, and has not been verified on hardware.
+          This is an experimental debug-signed APK.
           An older preview may need to be uninstalled if its test signature differs.
 
           ### Credits
