@@ -25,7 +25,7 @@ public final class DiagnosticsActivity extends Activity {
     private final Runnable refresh=new Runnable(){
         @Override public void run(){
             if(devices!=null) {
-                connection.setText((MobileService.running()?"Servidor ativo":"Servidor desligado")+
+                connection.setText(L10n.t(DiagnosticsActivity.this,(MobileService.running()?"Servidor ativo":"Servidor desligado"))+
                     "  •  "+MobileService.connectedClients()+" conexão(ões) Xbox");
                 double interval=MobileService.requestIntervalMs();
                 String period=interval>0?
@@ -40,7 +40,7 @@ public final class DiagnosticsActivity extends Activity {
                 int percent=manager==null?-1:manager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY);
                 phoneBattery.setText(percent>=0?"Bateria do celular: "+percent+"%":
-                    "Bateria do celular: indisponível");
+                    L10n.t(DiagnosticsActivity.this,"Bateria do celular: indisponível"));
                 renderDevices();
             }
             handler.postDelayed(this,1700);
@@ -105,11 +105,11 @@ public final class DiagnosticsActivity extends Activity {
             LinearLayout card=ui.card(true);
             card.addView(ui.label(pad.getName(),19,true,ui.text));
             String family=InputDevices.family(pad);
-            card.addView(ui.label("Tipo provável: "+family+"\n"+
+            card.addView(ui.label(L10n.t(this,"Tipo provável: ")+family+"\n"+
                 "ID Android: "+id+"  •  Vendor ID: "+pad.getVendorId()+
                 "  •  Product ID: "+pad.getProductId(),13,false,ui.muted),
                 ui.margin(-1,-2,7));
-            card.addView(ui.label("Bateria: "+InputDevices.battery(pad),14,true,ui.accent),
+            card.addView(ui.label(L10n.t(this,"Bateria: ")+InputDevices.battery(pad),14,true,ui.accent),
                 ui.margin(-1,-2,8));
             StringBuilder axes=new StringBuilder();
             for(InputDevice.MotionRange range:pad.getMotionRanges()){
