@@ -16,6 +16,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class OberonWebSocketServer {
     public interface Listener { void onStatus(String text,int clientCount); }
     private final InputState input;
+    private ControllerSlots controllers;
+    private java.util.function.Consumer<byte[]> rumbleHandler;
+    public void setControllerSlots(ControllerSlots value){controllers=value;}
+    public void setRumbleHandler(java.util.function.Consumer<byte[]> value){rumbleHandler=value;}
     private final Listener listener;
     private final AtomicBoolean active=new AtomicBoolean(false);
     private volatile ServerSocket listenerSocket;
@@ -57,6 +61,7 @@ public final class OberonWebSocketServer {
         listenerSocket=null;client=null;
         connections=0;
         input.reset();
+        if(rumbleHandler!=null)rumbleHandler.accept(new byte[17]);
         lastRequestNanos=0;
         notice("Server stopped");
     }
@@ -132,7 +137,11 @@ public final class OberonWebSocketServer {
                 }
                 lastRequestNanos=now;
                 packetsRequested++;
-                byte[] snapshot=OberonProtocol.encode(input.snapshot(),input.deadzone());
+                if(frame.payload.length==17&&rumbleHandler!=null)
+                    rumbleHandler.accept(frame.payload);
+                byte[] snapshot=controllers==null
+                    ?OberonProtocol.encode(input.snapshot(),input.deadzone())
+                    :OberonProtocol.encode(controllers.snapshots(),input.deadzone());
                 sendFrame(out,2,snapshot);
                 packetsSent++;
             }
