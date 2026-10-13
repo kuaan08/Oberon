@@ -21,6 +21,7 @@ public final class VirtualGamepadView extends View {
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
     private MobileUi theme;
     private boolean haptics;
+    private boolean animations=true;
     private float sizeScale=1f;
     private int leftPointer=-1,rightPointer=-1,heldButtons;
     private float lx,ly,rx,ry,lt,rt;
@@ -39,12 +40,12 @@ public final class VirtualGamepadView extends View {
                 dpadX=w*.245f;dpadY=h*.385f;
                 topY=h*.175f;shoulderY=h*.245f;centerY=h*.565f;
             }else{
-                stickR=Math.min(h*.195f,w*.112f)*scale;
+                stickR=Math.min(h*.17f,w*.105f)*scale;
                 faceR=h*.071f*scale;gap=h*.113f*scale;
-                leftX=w*.19f;leftY=h*.57f;rightX=w*.677f;rightY=h*.73f;
+                leftX=w*.19f;leftY=h*.57f;rightX=w*.677f;rightY=h*.65f;
                 faceX=w*.843f;faceY=h*.47f;
                 dpadX=w*.385f;dpadY=h*.75f;
-                topY=h*.18f;shoulderY=h*.29f;centerY=h*.465f;
+                topY=h*.22f;shoulderY=h*.33f;centerY=h*.465f;
             }
         }
         float centerLeft(){return portrait?w*.40f:w*.47f;}
@@ -66,6 +67,7 @@ public final class VirtualGamepadView extends View {
     }
     public void setPalette(MobileUi palette){theme=palette;invalidate();}
     public void setHaptics(boolean value){haptics=value;}
+    public void setAnimations(boolean value){animations=value;}
     public void setScale(float value){sizeScale=Math.max(.8f,Math.min(1.2f,value));invalidate();}
 
     private void fill(int color){paint.setStyle(Paint.Style.FILL);paint.setColor(color);}
@@ -153,7 +155,7 @@ public final class VirtualGamepadView extends View {
         face(c,"R3",l.rightX,l.rightY+l.stickR*1.50f,small,
             InputState.R3,theme.text);
 
-        if(SystemClock.uptimeMillis()-pressAt<155){
+        if(animations && SystemClock.uptimeMillis()-pressAt<155){
             postInvalidateDelayed(16);
         }
     }
