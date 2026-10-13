@@ -70,6 +70,16 @@ public final class SettingsActivity extends Activity {
         TextView sub=ui.label("Personalize a aparência e os controles do seu jeito.",14,false,ui.muted);
         content.addView(sub,ui.margin(-1,d(40),3));
 
+        section("IDIOMA / LANGUAGE", "Choose the interface language or follow your phone's language.");
+        LinearLayout languageCard=ui.card(true);
+        languageCard.addView(ui.label("Language / Idioma",18,true,ui.text));
+        int current=java.util.Arrays.asList(L10n.CODES).indexOf(L10n.selected(this));
+        String display=current<=0?L10n.titleForSystem(this):L10n.NAMES[current];
+        languageCard.addView(ui.label(display,14,false,ui.muted),ui.margin(-1,d(28),4));
+        Button languageButton=ui.button("Change language / Alterar idioma",true);
+        languageButton.setOnClickListener(v->LanguageDialog.show(this));
+        languageCard.addView(languageButton,ui.margin(-1,d(48),9));
+        content.addView(languageCard,ui.margin(-1,-2,9));
         section("APARÊNCIA", "Escolha o tema utilizado nas páginas e nos controles virtuais.");
         LinearLayout palette=ui.card(true);
         palette.setPadding(d(12),d(12),d(12),d(12));
