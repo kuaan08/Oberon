@@ -27,7 +27,7 @@ public final class MainActivity extends Activity {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private MobileUi ui;
-    private TextView status,ip,device,connectionCount;
+    private TextView status,ip,device,connectionCount,details;
     private Button connection;
     private boolean autoTouchLaunched;
     private int d(float v){return MobileUi.dp(this,v);}
@@ -46,6 +46,16 @@ public final class MainActivity extends Activity {
                 device.setText(detected==null?"Nenhum controle detectado":
                     "Conectado: "+detected);
                 if(detected!=null)input.setControllerName(detected);
+                if(details!=null){
+                    InputDevice pad=selectedController();
+                    double interval=MobileService.requestIntervalMs();
+                    details.setText("Captura: "+(pad==null?"sem controle":InputDevices.family(pad))+
+                        "\nBateria: "+(pad==null?"indisponível":InputDevices.battery(pad))+
+                        "\nXbox conectado(s): "+MobileService.connectedClients()+
+                        "\nPacotes recebidos/enviados: "+MobileService.requests()+"/"+MobileService.responses()+
+                        "\nIntervalo entre pedidos: "+(interval<=0?"aguardando":
+                            String.format(java.util.Locale.US,"%.1f ms",interval)));
+                }
             }
             handler.postDelayed(this,800);
         }
@@ -56,20 +66,26 @@ public final class MainActivity extends Activity {
         if(value.startsWith("Could not"))return "Erro na conexão: "+value;
         return "Servidor pronto";
     }
-    private String detectController(){
+    private InputDevice selectedController(){
+        int chosen=prefs.getInt("selected_controller",-1);
         for(int id:InputDevice.getDeviceIds()){
             InputDevice pad=InputDevice.getDevice(id);
-            if(pad==null||pad.isVirtual())continue;
-            int sources=pad.getSources();
-            if((sources&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD ||
-               (sources&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK)
-                return pad.getName();
+            if(InputDevices.isController(pad)&&(chosen<0||chosen==id))return pad;
         }
         return null;
+    }
+    private String detectController(){
+        InputDevice pad=selectedController();
+        return pad==null?null:pad.getName();
+    }
+    private boolean acceptDevice(int id){
+        int chosen=prefs.getInt("selected_controller",-1);
+        return chosen<0||chosen==id;
     }
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
+        OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
         input.setUsePhysical(true);
         input.setDeadzone(prefs.getInt("deadzone",10)/100f);
@@ -168,6 +184,18 @@ public final class MainActivity extends Activity {
         gamepadCard.addView(text("Conecte um controle ao Android. Botões e analógicos serão lidos enquanto este aplicativo estiver aberto.",13,false,ui.muted),
             ui.margin(-1,-2,11));
         right.addView(gamepadCard,ui.margin(-1,-2,6));
+        if(prefs.getBoolean("detailed_mode",false)){
+            LinearLayout detailCard=ui.card(true);
+            detailCard.addView(text("MODO DETALHADO",13,true,ui.accent));
+            details=text("Aguardando dados...",13,false,ui.text);
+            details.setLineSpacing(d(3),1.05f);
+            detailCard.addView(details,ui.margin(-1,-2,8));
+            Button diagnostic=ui.button("Abrir diagnóstico completo",false);
+            diagnostic.setOnClickListener(v->startActivity(
+                new Intent(this,DiagnosticsActivity.class)));
+            detailCard.addView(diagnostic,ui.margin(-1,d(48),12));
+            right.addView(detailCard,ui.margin(-1,-2,6));
+        }
 
         LinearLayout touchCard=ui.card(true);
         touchCard.addView(text("CONTROLE NA TELA",13,true,ui.accent));
@@ -187,6 +215,20 @@ public final class MainActivity extends Activity {
         help.setOnClickListener(v->help());
         helper.addView(help,ui.margin(-1,d(45),13));
         left.addView(helper,ui.margin(-1,-2,7));
+        LinearLayout utilities=ui.card(true);
+        utilities.addView(text("FERRAMENTAS",13,true,ui.accent));
+        LinearLayout shortcuts=new LinearLayout(this);
+        Button diagnostics=ui.button("Diagnóstico",false);
+        diagnostics.setOnClickListener(v->startActivity(
+            new Intent(this,DiagnosticsActivity.class)));
+        shortcuts.addView(diagnostics,new LinearLayout.LayoutParams(0,d(48),1));
+        Button updates=ui.button("Atualizações",false);
+        updates.setOnClickListener(v->startActivity(
+            new Intent(this,UpdatesActivity.class)));
+        LinearLayout.LayoutParams udp=new LinearLayout.LayoutParams(0,d(48),1);
+        udp.leftMargin=d(8);shortcuts.addView(updates,udp);
+        utilities.addView(shortcuts,ui.margin(-1,d(50),10));
+        left.addView(utilities,ui.margin(-1,-2,7));
 
         TextView foot=text("Oberon Extended Mobile  ·  Alpha 2  ·  Rede local",12,false,ui.muted);
         foot.setGravity(Gravity.CENTER);
@@ -221,18 +263,17 @@ public final class MainActivity extends Activity {
         MobileUi.enter(this);
     }
     private void help(){
-        new AlertDialog.Builder(this)
-            .setTitle("Como conectar ao Xbox")
-            .setMessage("1. Conecte o celular e o Xbox à mesma rede Wi-Fi.\n\n"+
-                "2. Toque em Iniciar servidor.\n\n"+
-                "3. Abra o aplicativo Oberon Remote Input original no Xbox.\n\n"+
-                "4. Digite o endereço IP mostrado aqui (porta 26401).\n\n"+
-                "5. Use um controle Bluetooth/USB conectado ao celular ou abra o controle virtual.\n\n"+
-                "A instalação do aplicativo receptor no Xbox ainda é obrigatória.")
-            .setPositiveButton("Entendi",null).show();
+        ExtendedDialog.info(this,"Como conectar ao Xbox",
+            "1. Conecte o celular e o Xbox à mesma rede Wi-Fi.\n\n"+
+            "2. Toque em Iniciar servidor.\n\n"+
+            "3. Abra o Oberon Remote Input original no Xbox.\n\n"+
+            "4. Digite o IP mostrado aqui na porta 26401.\n\n"+
+            "5. Use um controle Bluetooth/USB ou abra o controle virtual.\n\n"+
+            "O aplicativo receptor no Xbox continua sendo necessário.");
     }
     @Override protected void onResume(){
         super.onResume();
+        OrientationPrefs.apply(this,"app_orientation","auto");
         input.setUsePhysical(true);
         MobileUi next=MobileUi.from(this);
         if(!next.theme.equals(ui.theme)){recreate();return;}
@@ -249,8 +290,13 @@ public final class MainActivity extends Activity {
             (source&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK;
     }
     @Override public boolean dispatchKeyEvent(KeyEvent e){
-        if(gamepadSource(e.getSource())){
+        if(gamepadSource(e.getSource()) && acceptDevice(e.getDeviceId())){
             int bit=mapButton(e.getKeyCode());
+            if(prefs.getBoolean("experimental_enabled",false) &&
+                prefs.getBoolean("experimental_swap_ab",false)){
+                if(bit==InputState.A)bit=InputState.B;
+                else if(bit==InputState.B)bit=InputState.A;
+            }
             if(bit!=0){
                 if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
                 input.setPhysicalButton(bit,e.getAction()==KeyEvent.ACTION_DOWN);
@@ -287,17 +333,23 @@ public final class MainActivity extends Activity {
     }
     @Override public boolean onGenericMotionEvent(MotionEvent e){
         if((e.getSource()&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK &&
-            e.getAction()==MotionEvent.ACTION_MOVE) {
+            e.getAction()==MotionEvent.ACTION_MOVE && acceptDevice(e.getDeviceId())) {
             if(e.getDevice()!=null)input.setControllerName(e.getDevice().getName());
             InputDevice source=e.getDevice();
-            float rx=axis(e,source,MotionEvent.AXIS_Z,MotionEvent.AXIS_RX);
-            float ry=axis(e,source,MotionEvent.AXIS_RZ,MotionEvent.AXIS_RY);
+            boolean experimental=prefs.getBoolean("experimental_enabled",false);
+            boolean alternate=experimental&&prefs.getBoolean("experimental_axes_rxry",false);
+            float rx=alternate?axis(e,source,MotionEvent.AXIS_RX,MotionEvent.AXIS_Z):
+                axis(e,source,MotionEvent.AXIS_Z,MotionEvent.AXIS_RX);
+            float ry=alternate?axis(e,source,MotionEvent.AXIS_RY,MotionEvent.AXIS_RZ):
+                axis(e,source,MotionEvent.AXIS_RZ,MotionEvent.AXIS_RY);
             float lt=Math.max(e.getAxisValue(MotionEvent.AXIS_LTRIGGER),
                 e.getAxisValue(MotionEvent.AXIS_BRAKE));
             float rt=Math.max(e.getAxisValue(MotionEvent.AXIS_RTRIGGER),
                 e.getAxisValue(MotionEvent.AXIS_GAS));
+            boolean invert=experimental&&prefs.getBoolean("experimental_invert_y",false);
             input.setPhysicalAxes(e.getAxisValue(MotionEvent.AXIS_X),
-                e.getAxisValue(MotionEvent.AXIS_Y),rx,ry,lt,rt);
+                e.getAxisValue(MotionEvent.AXIS_Y)*(invert?-1:1),
+                rx,ry*(invert?-1:1),lt,rt);
             input.setPhysicalHat(e.getAxisValue(MotionEvent.AXIS_HAT_X),
                 e.getAxisValue(MotionEvent.AXIS_HAT_Y));
             return true;
