@@ -67,7 +67,7 @@ public final class UpdatesActivity extends Activity {
         catch(Exception e){return "desconhecida";}
     }
     private void check(Button verify){
-        result.setText("Procurando atualizações...");
+        result.setText(L10n.t(this,"Procurando atualizações..."));
         new Thread(()->{
             String message;
             String destination=RELEASES;
@@ -127,8 +127,8 @@ public final class UpdatesActivity extends Activity {
             final String m=message,d=destination;
             runOnUiThread(()->{
                 if(isFinishing()||isDestroyed())return;
-                result.setText(m);target=d;verify.setEnabled(true);
-                action.setText(d.endsWith(".apk")?"Abrir download oficial":"Abrir página no GitHub");
+                result.setText(L10n.t(this,m));target=d;verify.setEnabled(true);
+                action.setText(L10n.t(this,d.endsWith(".apk")?"Abrir download oficial":"Abrir página no GitHub"));
             });
         },"Extended-Update-Check").start();
     }
