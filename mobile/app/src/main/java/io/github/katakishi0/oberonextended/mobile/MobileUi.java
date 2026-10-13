@@ -80,14 +80,14 @@ public final class MobileUi {
     }
     public TextView label(String value,int sp,boolean strong,int color) {
         TextView textView=new TextView(context);
-        textView.setText(value);textView.setTextSize(sp);textView.setTextColor(color);
+        textView.setText(L10n.t(context,value));textView.setTextSize(sp);textView.setTextColor(color);
         textView.setGravity(Gravity.CENTER_VERTICAL);
         if(strong)textView.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
         return textView;
     }
     public Button button(String label,boolean primary) {
         Button button=new Button(context);
-        button.setText(label);button.setTextSize(13);button.setAllCaps(false);
+        button.setText(L10n.t(context,label));button.setTextSize(13);button.setAllCaps(false);
         button.setTextColor(primary?accentText:text);
         button.setBackground(shape(primary?accent:surface,12));
         button.setPadding(dp(context,12),0,dp(context,12),0);
