@@ -36,4 +36,30 @@ public class OberonProtocolTest {
         s.setUsePhysical(true);
         assertEquals(InputState.B,s.snapshot().buttons);
     }
+
+    @Test public void fourControllerPacketHasDistinctActiveSlots(){
+        InputState.Snapshot first=new InputState.Snapshot(1,0,0,0,0,0,InputState.A);
+        InputState.Snapshot second=new InputState.Snapshot(0,0,0,0,.5f,0,InputState.B);
+        InputState.Snapshot fourth=new InputState.Snapshot(0,0,0,-1,0,1,InputState.X);
+        byte[] packet=OberonProtocol.encode(new InputState.Snapshot[]{
+            first,second,null,fourth
+        },0);
+        assertEquals(100,packet.length);
+        assertEquals(255,packet[0]&255);
+        assertEquals(255,packet[25]&255);
+        assertEquals(0,packet[50]&255);
+        assertEquals(255,packet[75]&255);
+        assertEquals(0x80,packet[13]&255);
+        assertEquals(0x40,packet[38]&255);
+        assertEquals(0x20,packet[88]&255);
+        assertEquals(32767,shortAt(packet,1));
+        assertTrue(shortAt(packet,34)>=16000);
+        assertEquals(32767,shortAt(packet,86));
+    }
+    @Test public void disconnectedSecondSlotIsFullyZeroed(){
+        byte[] bytes=OberonProtocol.encode(new InputState.Snapshot[]{
+            new InputState.Snapshot(0,0,0,0,0,0,0),null,null,null
+        },.1f);
+        for(int i=25;i<100;i++)assertEquals(0,bytes[i]);
+    }
 }
