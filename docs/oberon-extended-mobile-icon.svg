@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" role="img" aria-label="Oberon Extended Mobile icon">
+  <title>Oberon Extended Mobile</title>
+  <path fill="#0B1510" d="M0 0h108v108H0z"/>
+  <path fill="#162B1D" d="M12 12h84v84H12z"/>
+  <path fill="none" stroke="#80EB9F" stroke-width="7" stroke-linecap="round" d="M33 27H78 M33 54H68 M33 81H78"/>
+  <path fill="none" stroke="#EDF8EF" stroke-width="7" stroke-linecap="round" d="M33 27V81"/>
+  <circle fill="#80EB9F" cx="79" cy="54" r="4"/>
+</svg>
