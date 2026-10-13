@@ -16,6 +16,7 @@ public final class MobileService extends Service {
     private static volatile MobileService instance;
     private OberonWebSocketServer server;
     private RootGamepadCapture rootCapture;
+    private ShizukuGamepadCapture shizukuCapture;
     private volatile String status="Server stopped";
     public static boolean running(){return instance!=null&&instance.server!=null&&instance.server.isRunning();}
     public static String currentStatus(){return instance==null?"Server stopped":instance.status;}
@@ -24,14 +25,17 @@ public final class MobileService extends Service {
     public static long responses(){return instance==null||instance.server==null?0:instance.server.sent();}
     public static double requestIntervalMs(){return instance==null||instance.server==null?0:instance.server.requestIntervalMs();}
     public static boolean backgroundCaptureRequested(){
-        return instance!=null&&instance.rootCapture!=null;
+        return instance!=null&&(instance.rootCapture!=null||instance.shizukuCapture!=null);
     }
     public static boolean backgroundCapturing(){
-        return instance!=null&&instance.rootCapture!=null&&instance.rootCapture.isCapturing();
+        return instance!=null&&((instance.rootCapture!=null&&instance.rootCapture.isCapturing())||
+            (instance.shizukuCapture!=null&&instance.shizukuCapture.isCapturing()));
     }
     public static String backgroundCaptureStatus(){
-        return instance==null||instance.rootCapture==null?"Desativado":
-            instance.rootCapture.description();
+        if(instance==null)return "Desativado";
+        if(instance.shizukuCapture!=null)return instance.shizukuCapture.description();
+        if(instance.rootCapture!=null)return instance.rootCapture.description();
+        return "Desativado";
     }
 
 
@@ -79,8 +83,21 @@ public final class MobileService extends Service {
                 .getBoolean("experimental_tcp_nodelay",true));
             server.start();
             status="Waiting for Xbox";
-            if(getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE)
-                .getBoolean("experimental_root_background",false)){
+            String mode=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE)
+                .getString("background_capture_mode","normal");
+            if("shizuku".equals(mode)){
+                if(shizukuCapture==null){
+                    shizukuCapture=new ShizukuGamepadCapture(this,INPUT,message->{
+                        NotificationManager manager=getSystemService(NotificationManager.class);
+                        if(manager!=null&&running())manager.notify(26401,
+                            notification("Xbox: "+status+" | Shizuku: "+message));
+                    });
+                    shizukuCapture.start();
+                }
+            }else if("root".equals(mode)||
+                    ("normal".equals(mode)&&getSharedPreferences(
+                        MobileUi.PREFS,MODE_PRIVATE)
+                        .getBoolean("experimental_root_background",false))){
                 if(rootCapture==null){
                     rootCapture=new RootGamepadCapture(this,INPUT,message->{
                         NotificationManager manager=getSystemService(NotificationManager.class);
@@ -97,6 +114,7 @@ public final class MobileService extends Service {
         return START_STICKY;
     }
     @Override public void onDestroy(){
+        if(shizukuCapture!=null){shizukuCapture.stop();shizukuCapture=null;}
         if(rootCapture!=null){rootCapture.stop();rootCapture=null;}
         if(rumbleFeedback!=null)rumbleFeedback.stop();
         if(server!=null)server.stop();
