@@ -18,7 +18,8 @@ public final class MainActivity extends Activity {
     private LinearLayout root,layout;
     private TextView status,ip,controllerName;
     private Button connect,touchMode,hardwareMode;
-    private VirtualGamepadView gamepadView;\n    private TextView physicalInfo;
+    private VirtualGamepadView gamepadView;
+    private TextView physicalInfo;
     private int bg,surface,fg,muted,accent;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final Runnable ticker=new Runnable(){
@@ -145,7 +146,8 @@ public final class MainActivity extends Activity {
     private void updateMode(){
         if(gamepadView!=null){
             gamepadView.setVisibility(input.usePhysical()?View.GONE:View.VISIBLE);
-            if(input.usePhysical())gamepadView.release();\n            physicalInfo.setVisibility(input.usePhysical()?View.VISIBLE:View.GONE);
+            if(input.usePhysical())gamepadView.release();
+            physicalInfo.setVisibility(input.usePhysical()?View.VISIBLE:View.GONE);
         }
         if(touchMode!=null){
             touchMode.setTextColor(input.usePhysical()?fg:bg);
