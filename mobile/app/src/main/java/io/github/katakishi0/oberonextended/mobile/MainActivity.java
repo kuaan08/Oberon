@@ -30,6 +30,7 @@ public final class MainActivity extends Activity {
     private TextView status,ip,device,connectionCount,details;
     private Button connection;
     private boolean autoTouchLaunched;
+    private String lastLanguage;
     private int d(float v){return MobileUi.dp(this,v);}
 
     private final Runnable updater=new Runnable(){
@@ -87,6 +88,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
+        lastLanguage=L10n.selected(this);
         OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
         input.setUsePhysical(true);
@@ -277,7 +279,9 @@ public final class MainActivity extends Activity {
         OrientationPrefs.apply(this,"app_orientation","auto");
         input.setUsePhysical(true);
         MobileUi next=MobileUi.from(this);
-        if(!next.theme.equals(ui.theme)){recreate();return;}
+        if(!next.theme.equals(ui.theme) || !L10n.selected(this).equals(lastLanguage)){
+            recreate();return;
+        }
         handler.removeCallbacks(updater);
         handler.post(updater);
     }
