@@ -29,8 +29,7 @@ public final class UpdatesActivity extends Activity {
         super.onCreate(b);
         OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
-        getWindow().setStatusBarColor(ui.bg);
-        getWindow().setNavigationBarColor(ui.bg);
+        ui.applyWindow(this);
         LinearLayout layout=new LinearLayout(this);
         layout.setBackgroundColor(ui.bg);layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dp(18),dp(18),dp(18),dp(22));
