@@ -24,7 +24,7 @@ The Android sender does not require the Windows version. The existing original O
 
 **Responsive dashboard.** The home screen works vertically or horizontally. Bluetooth/USB is the default input mode. A separate full-screen touch controller supports portrait and landscape layouts.
 
-**Fully themed interface.** Choose Xbox Green, Xbox Light, Midnight, Graphite, Violet, or Ocean. The help and confirmation dialogs follow the selected Extended theme. Animations and touch vibration are optional.
+**Fully themed interface.** Choose Xbox Green, Xbox Light, AMOLED Black, Midnight, Graphite, Violet, or Ocean. The help and confirmation dialogs follow the selected Extended theme. Animations and touch vibration are optional.
 
 **Two independent orientation settings.** Set the orientation of the **whole Android app** to Auto, Vertical or Horizontal, and choose Vertical or Horizontal separately for the **virtual touch controller**.
 
