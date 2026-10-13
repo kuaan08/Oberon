@@ -98,6 +98,8 @@ public final class MobileUi {
     public static void animatePress(View view) {
         view.setOnTouchListener((v,event)->{
             if(!v.isEnabled())return false;
+            if(!v.getContext().getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+                .getBoolean("animations",true))return false;
             if(event.getActionMasked()==android.view.MotionEvent.ACTION_DOWN) {
                 v.animate().scaleX(.965f).scaleY(.965f).setDuration(95).start();
             } else if(event.getActionMasked()==android.view.MotionEvent.ACTION_UP ||
