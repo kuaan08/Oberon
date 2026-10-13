@@ -33,6 +33,7 @@ public final class TouchActivity extends Activity {
         pad=new VirtualGamepadView(this,input);
         pad.setPalette(ui);
         pad.setHaptics(prefs.getBoolean("haptics",true));
+        pad.setAnimations(prefs.getBoolean("animations",true));
         pad.setScale(prefs.getInt("touch_scale",100)/100f);
         root.addView(pad,new FrameLayout.LayoutParams(-1,-1));
 
