@@ -33,10 +33,10 @@ jobs:
         run: |
           test -s mobile/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p artifacts
-          cp mobile/app/build/outputs/apk/debug/app-debug.apk artifacts/Oberon_Extended_Mobile_Android_alpha1.apk
+          cp mobile/app/build/outputs/apk/debug/app-debug.apk artifacts/Oberon_Extended_Mobile_Android_alpha2.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Oberon_Extended_Mobile_Android_Debug_APK
-          path: artifacts/Oberon_Extended_Mobile_Android_alpha1.apk
+          name: Oberon_Extended_Mobile_Alpha2_Debug_APK
+          path: artifacts/Oberon_Extended_Mobile_Android_alpha2.apk
           retention-days: 30
           if-no-files-found: error
