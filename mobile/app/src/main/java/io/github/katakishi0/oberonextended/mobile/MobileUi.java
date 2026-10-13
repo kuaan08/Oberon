@@ -57,6 +57,14 @@ public final class MobileUi {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         return new MobileUi(context, prefs.getString("theme", "Xbox Green"));
     }
+    public void applyWindow(Activity activity) {
+        activity.getWindow().setStatusBarColor(bg);
+        activity.getWindow().setNavigationBarColor(bg);
+        int flags="Xbox Light".equals(theme)
+            ? View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            : 0;
+        activity.getWindow().getDecorView().setSystemUiVisibility(flags);
+    }
     private static int rgb(int r,int g,int b){return Color.rgb(r,g,b);}
     public static int dp(Context c,float value) {
         return Math.round(c.getResources().getDisplayMetrics().density*value);
