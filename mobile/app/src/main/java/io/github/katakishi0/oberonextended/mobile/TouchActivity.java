@@ -55,7 +55,7 @@ public final class TouchActivity extends Activity {
         TextView brand=ui.label("OBERON  EXTENDED MOBILE",12,true,ui.accent);
         brand.setGravity(Gravity.RIGHT);
         status.addView(brand);
-        TextView help=ui.label("CONTROLE VIRTUAL · "+("portrait".equals(orientation)?"VERTICAL":"HORIZONTAL"),11,false,ui.muted);
+        TextView help=ui.label("CONTROLE VIRTUAL · "+L10n.t(this,("portrait".equals(orientation)?"VERTICAL":"HORIZONTAL")),11,false,ui.muted);
         help.setGravity(Gravity.RIGHT);
         status.addView(help);
         FrameLayout.LayoutParams statusPos=new FrameLayout.LayoutParams(
