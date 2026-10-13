@@ -127,7 +127,7 @@ public final class SettingsActivity extends Activity {
         scaleBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser) {
                 int percent=progress+80;
-                scaleValue.setText("Tamanho dos botões: "+percent+"%");
+                scaleValue.setText(L10n.t(SettingsActivity.this,"Tamanho dos botões: ")+percent+"%");
                 if(fromUser)prefs.edit().putInt("touch_scale",percent).apply();
             }
             public void onStartTrackingTouch(SeekBar bar){}
@@ -173,7 +173,7 @@ public final class SettingsActivity extends Activity {
         LinearLayout network=ui.card(true);
         addNote(network,"Servidor: WebSocket local na porta 26401.");
         addNote(network,"O app original do Oberon precisa estar aberto no Xbox. O Android não injeta controles diretamente no console.");
-        addNote(network,"Suporte a um controle transmitido por vez nesta versão.");
+        addNote(network,"Até quatro controles podem ser transmitidos quando o Android fornece os eventos.");
         content.addView(network,ui.margin(-1,-2,8));
         section("DIAGNÓSTICOS E ATUALIZAÇÕES",
             "Informações técnicas e novas versões do Oberon Extended Mobile.");
@@ -293,7 +293,7 @@ public final class SettingsActivity extends Activity {
         slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser) {
                 int value=min+progress;
-                label.setText(title+": "+value+"%");
+                label.setText(L10n.t(SettingsActivity.this,title)+": "+value+"%");
                 if(fromUser)prefs.edit().putInt(key,value).apply();
             }
             public void onStartTrackingTouch(SeekBar bar){}
