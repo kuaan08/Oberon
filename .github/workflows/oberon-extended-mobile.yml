@@ -1,4 +1,5 @@
-name: Oberon Extended Mobile Android
+name: Oberon Extended Mobile - Android Preview Release
+
 on:
   push:
     branches: [feature/oberon-extended-mobile]
@@ -6,48 +7,126 @@ on:
       - 'mobile/**'
       - '.github/workflows/oberon-extended-mobile.yml'
   workflow_dispatch:
+
 concurrency:
-  group: oberon-mobile-${{ github.ref }}
+  group: oberon-mobile-release-${{ github.ref }}
   cancel-in-progress: true
+
+# Required for GitHub Releases and release tags created by this workflow.
 permissions:
-  contents: read
+  contents: write
+
 jobs:
-  android:
+  android-preview:
+    name: Test, build and publish Android preview
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout Android source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v4
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
         with:
           packages: ''
-      - name: Install Android SDK
+
+      - name: Install Android API 35
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      # Keep a consistent debug signature between preview builds, where
-      # possible, so Android can install an update over the prior preview.
-      # An official signed release will require a private production key.
-      - name: Cache test signing key
+
+      # Cache the Android preview debug key where possible so later Android
+      # preview APKs can be installed over earlier builds with the same key.
+      # This is a TEST signature, not a production signing credential.
+      - name: Cache preview debug signing key
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
           key: oberon-extended-mobile-debug-signing-v1
-      - name: Unit tests and Android debug APK
+
+      - name: Run tests and compile Android APK
         working-directory: mobile
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
-      - name: Verify APK
+
+      - name: Prepare tagged Android preview
+        shell: bash
         run: |
-          test -s mobile/app/build/outputs/apk/debug/app-debug.apk
-          mkdir -p artifacts
-          cp mobile/app/build/outputs/apk/debug/app-debug.apk artifacts/Oberon_Extended_Mobile_Android_alpha3.apk
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Oberon_Extended_Mobile_Alpha3_Debug_APK
-          path: artifacts/Oberon_Extended_Mobile_Android_alpha3.apk
-          retention-days: 30
-          if-no-files-found: error
+          set -euo pipefail
+          VERSION="$(sed -n "s/^[[:space:]]*versionName '\([^']*\)'.*/\1/p" mobile/app/build.gradle | head -1)"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta)\.[0-9]+$ ]]; then
+            echo "::error::Expected versionName such as 0.3.0-alpha.3 or 0.4.0-beta.1."
+            exit 1
+          fi
+          APK="mobile/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          mkdir -p dist
+          cp "$APK" "dist/Oberon_Extended_Mobile_Android_v${VERSION}.apk"
+          echo "MOBILE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "MOBILE_TAG=mobile-v$VERSION" >> "$GITHUB_ENV"
+          echo "MOBILE_APK=dist/Oberon_Extended_Mobile_Android_v${VERSION}.apk" >> "$GITHUB_ENV"
+
+      - name: Prepare preview release description
+        shell: bash
+        run: |
+          cat > release-notes.md <<EOF
+          ## Oberon Extended Mobile — Android ${MOBILE_VERSION}
+
+          **Android 8.0+ • Alpha/Beta preview • Not a stable release**
+
+          Download the APK in **Assets** below, open it on Android and follow the in-app help.
+
+          ### What's included
+          - Android dashboard for portrait and landscape, with Bluetooth/USB by default.
+          - Full-screen virtual gamepad in portrait or landscape and customizable controls.
+          - Extended themes (including AMOLED Black), custom dialogs, haptics and animations.
+          - Controller diagnostics, optional battery information and experimental mappings.
+          - Local WebSocket input sender on port 26401 and in-app update checks.
+
+          ### Connect to Xbox
+          Connect the Android device and Xbox to the same home Wi-Fi network.
+          Start the server on Android, then connect the **original Oberon Remote Input Xbox receiver**
+          to the Android IP address shown inside the app.
+
+          **Limitations:** The Android sender currently transmits one controller slot.
+          Physical controllers must be supported by Android; rumble and measured end-to-end Xbox
+          latency are not implemented. This is an experimental debug-signed APK.
+          An older preview may need to be uninstalled if its test signature differs.
+
+          ### Credits
+          - **Original Oberon Remote Input:** [SamsidParty](https://github.com/SamsidParty/OberonRemote) and contributors.
+          - **Oberon Remote Extended:** [katakishi0](https://github.com/katakishi0/OberonRemote), who also acknowledges the original developers.
+          - **Android source and documentation:** [Oberon Extended Mobile](https://github.com/kuaan08/Oberon/tree/feature/oberon-extended-mobile).
+
+          The original [LICENSE](https://github.com/kuaan08/Oberon/blob/feature/oberon-extended-mobile/LICENSE)
+          remains applicable, including upstream attribution and publicly available source.
+          EOF
+
+      # A version tag identifies the source used to build a published APK.
+      # Do not replace an existing release's APK with another commit: increment
+      # versionName in mobile/app/build.gradle for the next Alpha/Beta build.
+      - name: Publish GitHub Releases pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh release view "$MOBILE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::Release $MOBILE_TAG already exists. Update versionName for a new mobile preview."
+            exit 0
+          fi
+          gh release create "$MOBILE_TAG" "$MOBILE_APK" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Oberon Extended Mobile v$MOBILE_VERSION (Android Preview)" \
+            --notes-file release-notes.md \
+            --prerelease
