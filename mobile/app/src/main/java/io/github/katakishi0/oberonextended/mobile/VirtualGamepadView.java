@@ -204,7 +204,7 @@ public final class VirtualGamepadView extends View {
     @Override public boolean onTouchEvent(MotionEvent e){
         int action=e.getActionMasked(),changed=e.getActionIndex();
         if(action==MotionEvent.ACTION_CANCEL){release();return true;}
-        Layout l=new Layout(getWidth(),getHeight(),sizeScale);
+        Layout l=new Layout(getWidth(),getHeight(),sizeScale,stickScale,faceScale);
         if(action==MotionEvent.ACTION_DOWN||action==MotionEvent.ACTION_POINTER_DOWN){
             int id=e.getPointerId(changed);
             float x=e.getX(changed),y=e.getY(changed);
