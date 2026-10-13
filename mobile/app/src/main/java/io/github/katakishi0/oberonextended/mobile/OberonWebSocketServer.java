@@ -21,6 +21,10 @@ public final class OberonWebSocketServer {
     private volatile ServerSocket listenerSocket;
     private volatile Socket client;
     private volatile int connections;
+    private volatile long packetsRequested;
+    private volatile long packetsSent;
+    private volatile double requestIntervalMs;
+    private volatile long lastRequestNanos;
     private Thread thread;
 
     public OberonWebSocketServer(InputState input,Listener listener) {
@@ -28,6 +32,10 @@ public final class OberonWebSocketServer {
     }
     public boolean isRunning(){return active.get();}
     public int clientCount(){return connections;}
+    public long requested(){return packetsRequested;}
+    public long sent(){return packetsSent;}
+    /** Time since prior Xbox input request, NOT Xbox round-trip latency. */
+    public double requestIntervalMs(){return requestIntervalMs;}
     public synchronized void start() throws IOException {
         if(active.get())return;
         ServerSocket server=new ServerSocket();
@@ -47,6 +55,7 @@ public final class OberonWebSocketServer {
         listenerSocket=null;client=null;
         connections=0;
         input.reset();
+        lastRequestNanos=0;
         notice("Server stopped");
     }
     private void notice(String text){listener.onStatus(text,connections);}
@@ -112,8 +121,18 @@ public final class OberonWebSocketServer {
                 if(frame.opcode!=2)continue;
                 if(frame.payload.length!=1 && frame.payload.length!=17)continue;
                 if((frame.payload[0]&0xFF)!=0xFA)continue;
+                long now=System.nanoTime();
+                if(lastRequestNanos!=0){
+                    double delta=(now-lastRequestNanos)/1000000.0;
+                    if(delta>0 && delta<10000)
+                        requestIntervalMs=requestIntervalMs==0?delta:
+                            requestIntervalMs*.8+delta*.2;
+                }
+                lastRequestNanos=now;
+                packetsRequested++;
                 byte[] snapshot=OberonProtocol.encode(input.snapshot(),input.deadzone());
                 sendFrame(out,2,snapshot);
+                packetsSent++;
             }
         }
     }
