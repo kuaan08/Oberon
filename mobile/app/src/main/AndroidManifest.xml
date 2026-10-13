@@ -30,6 +30,10 @@
             android:name=".TouchActivity"
             android:exported="false"
             android:screenOrientation="unspecified" />
+        <activity android:name=".DiagnosticsActivity" android:exported="false"
+            android:screenOrientation="unspecified" />
+        <activity android:name=".UpdatesActivity" android:exported="false"
+            android:screenOrientation="unspecified" />
         <service
             android:name=".MobileService"
             android:exported="false"
