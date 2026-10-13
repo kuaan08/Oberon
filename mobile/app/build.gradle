@@ -1,0 +1,30 @@
+plugins {
+    id 'com.android.application'
+}
+android {
+    namespace 'io.github.katakishi0.oberonextended.mobile'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.katakishi0.oberonextended.mobile'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0-alpha.1'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            // A real production release must use a private signing key.
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
