@@ -36,15 +36,15 @@ public final class MainActivity extends Activity {
         @Override public void run(){
             if(status!=null) {
                 String raw=MobileService.currentStatus();
-                status.setText(statusLabel(raw));
+                status.setText(L10n.t(MainActivity.this,statusLabel(raw)));
                 status.setTextColor(MobileService.connectedClients()>0?ui.accent:ui.muted);
-                connectionCount.setText(MobileService.connectedClients()>0?
-                    "Xbox conectado":"Aguardando conexão");
-                connection.setText(MobileService.running()?"Parar servidor":"Iniciar servidor");
+                connectionCount.setText(L10n.t(MainActivity.this,MobileService.connectedClients()>0?
+                    "Xbox conectado":"Aguardando conexão"));
+                connection.setText(L10n.t(MainActivity.this,MobileService.running()?"Parar servidor":"Iniciar servidor"));
                 ip.setText(LanAddress.find()+":26401");
                 String detected=detectController();
-                device.setText(detected==null?"Nenhum controle detectado":
-                    "Conectado: "+detected);
+                device.setText(L10n.t(MainActivity.this,detected==null?"Nenhum controle detectado":
+                    "Conectado: "+detected));
                 if(detected!=null)input.setControllerName(detected);
                 if(details!=null){
                     InputDevice pad=selectedController();
@@ -165,7 +165,7 @@ public final class MainActivity extends Activity {
         copy.setOnClickListener(v->{
             ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE))
                 .setPrimaryClip(ClipData.newPlainText("Oberon IP",LanAddress.find()));
-            android.widget.Toast.makeText(this,"IP copiado",android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(this,L10n.t(this,"IP copiado"),android.widget.Toast.LENGTH_SHORT).show();
         });
         actions.addView(copy,new LinearLayout.LayoutParams(0,d(48),1));
         connection=ui.button("Iniciar servidor",true);
@@ -231,7 +231,7 @@ public final class MainActivity extends Activity {
         utilities.addView(shortcuts,ui.margin(-1,d(50),10));
         left.addView(utilities,ui.margin(-1,-2,7));
 
-        TextView foot=text("Oberon Extended Mobile  ·  Alpha 4  ·  Rede local",12,false,ui.muted);
+        TextView foot=text("Oberon Extended Mobile  ·  Alpha 6  ·  Rede local",12,false,ui.muted);
         foot.setGravity(Gravity.CENTER);
         whole.addView(foot,ui.margin(-1,d(43),2));
 
@@ -245,7 +245,7 @@ public final class MainActivity extends Activity {
             startService(new Intent(this,MobileService.class).setAction(MobileService.ACTION_STOP));
         }else{
             if(LanAddress.find().startsWith("No local")){
-                android.widget.Toast.makeText(this,"Conecte ao Wi-Fi local primeiro",android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(this,L10n.t(this,"Conecte ao Wi-Fi local primeiro"),android.widget.Toast.LENGTH_LONG).show();
                 return;
             }
             Intent intent=new Intent(this,MobileService.class).setAction(MobileService.ACTION_START);
