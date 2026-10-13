@@ -45,7 +45,11 @@ public final class ExtendedDialog {
         body.setLineSpacing(dp(activity,4),1.10f);
         body.setPadding(0,dp(activity,16),0,dp(activity,12));
         scroll.addView(body);
-        main.addView(scroll,new LinearLayout.LayoutParams(-1,-2));
+        int screenHeight=activity.getResources().getDisplayMetrics().heightPixels;
+        int estimatedLines=Math.max(3,message.length()/34+1);
+        int bodyHeight=Math.min(dp(activity,estimatedLines*25),
+            Math.max(dp(activity,90),(int)(screenHeight*.53f)));
+        main.addView(scroll,new LinearLayout.LayoutParams(-1,bodyHeight));
 
         LinearLayout actions=new LinearLayout(activity);
         actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
