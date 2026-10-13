@@ -89,8 +89,7 @@ public final class MainActivity extends Activity {
         ui=MobileUi.from(this);
         input.setUsePhysical(true);
         input.setDeadzone(prefs.getInt("deadzone",10)/100f);
-        getWindow().setStatusBarColor(ui.bg);
-        getWindow().setNavigationBarColor(ui.bg);
+        ui.applyWindow(this);
         render();
         if(state==null&&!prefs.getBoolean("default_physical",true)){
             autoTouchLaunched=true;
@@ -287,7 +286,8 @@ public final class MainActivity extends Activity {
     }
     private boolean gamepadSource(int source){
         return (source&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD ||
-            (source&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK;
+            (source&InputDevice.SOURCE_JOYSTICK)==InputDevice.SOURCE_JOYSTICK ||
+            (source&InputDevice.SOURCE_DPAD)==InputDevice.SOURCE_DPAD;
     }
     @Override public boolean dispatchKeyEvent(KeyEvent e){
         if(gamepadSource(e.getSource()) && acceptDevice(e.getDeviceId())){
