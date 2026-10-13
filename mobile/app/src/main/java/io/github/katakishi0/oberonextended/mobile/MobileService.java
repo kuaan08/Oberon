@@ -17,6 +17,10 @@ public final class MobileService extends Service {
     public static boolean running(){return instance!=null&&instance.server!=null&&instance.server.isRunning();}
     public static String currentStatus(){return instance==null?"Server stopped":instance.status;}
     public static int connectedClients(){return instance==null||instance.server==null?0:instance.server.clientCount();}
+    public static long requests(){return instance==null||instance.server==null?0:instance.server.requested();}
+    public static long responses(){return instance==null||instance.server==null?0:instance.server.sent();}
+    public static double requestIntervalMs(){return instance==null||instance.server==null?0:instance.server.requestIntervalMs();}
+
 
     @Override public void onCreate(){
         super.onCreate();instance=this;
