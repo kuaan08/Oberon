@@ -11,6 +11,8 @@ public final class MobileService extends Service {
     public static final String ACTION_STOP="io.github.katakishi0.oberonextended.STOP";
     private static final String CHANNEL="oberon_connection";
     public static final InputState INPUT=new InputState();
+    public static volatile ControllerSlots CONTROLLERS;
+    private RumbleFeedback rumbleFeedback;
     private static volatile MobileService instance;
     private OberonWebSocketServer server;
     private RootGamepadCapture rootCapture;
@@ -38,11 +40,15 @@ public final class MobileService extends Service {
         NotificationChannel channel=new NotificationChannel(CHANNEL,"Oberon connection",NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("Keeps the local Xbox controller connection alive.");
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        CONTROLLERS=new ControllerSlots(this,INPUT);
+        rumbleFeedback=new RumbleFeedback(this,CONTROLLERS);
         server=new OberonWebSocketServer(INPUT,(message,clients)->{
             status=message;
             NotificationManager nm=getSystemService(NotificationManager.class);
             if(nm!=null&&running())nm.notify(26401,notification(message));
         });
+        server.setControllerSlots(CONTROLLERS);
+        server.setRumbleHandler(rumbleFeedback::accept);
     }
     private Notification notification(String message){
         Intent activity=new Intent(this,MainActivity.class);
@@ -92,7 +98,9 @@ public final class MobileService extends Service {
     }
     @Override public void onDestroy(){
         if(rootCapture!=null){rootCapture.stop();rootCapture=null;}
+        if(rumbleFeedback!=null)rumbleFeedback.stop();
         if(server!=null)server.stop();
+        if(CONTROLLERS!=null){CONTROLLERS.clear();CONTROLLERS=null;}
         INPUT.reset();
         instance=null;
         super.onDestroy();
