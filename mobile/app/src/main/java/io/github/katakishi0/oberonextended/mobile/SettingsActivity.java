@@ -90,6 +90,23 @@ public final class SettingsActivity extends Activity {
         }
         orientation.addView(orientations);
         addNote(orientation, "A tela de toque fica em tela cheia, com botão Voltar. A orientação do painel segue a posição do celular.");
+        TextView scaleValue=ui.label("Tamanho dos botões: "+prefs.getInt("touch_scale",100)+"%",14,true,ui.text);
+        orientation.addView(scaleValue,ui.margin(-1,d(34),7));
+        SeekBar scaleBar=new SeekBar(this);
+        scaleBar.setMax(40);
+        scaleBar.setProgress(prefs.getInt("touch_scale",100)-80);
+        scaleBar.setProgressTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        scaleBar.setThumbTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        scaleBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser) {
+                int percent=progress+80;
+                scaleValue.setText("Tamanho dos botões: "+percent+"%");
+                if(fromUser)prefs.edit().putInt("touch_scale",percent).apply();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        orientation.addView(scaleBar,ui.margin(-1,d(42),0));
         content.addView(orientation,ui.margin(-1,-2,7));
 
         section("EXPERIÊNCIA", "Animações e resposta visual podem ser ajustadas.");
