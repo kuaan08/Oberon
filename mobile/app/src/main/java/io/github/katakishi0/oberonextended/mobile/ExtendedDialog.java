@@ -41,7 +41,7 @@ public final class ExtendedDialog {
 
         ScrollView scroll=new ScrollView(activity);
         scroll.setFillViewport(false);
-        TextView body=ui.label(message,15,false,ui.text);
+        TextView body=ui.label(L10n.t(activity,message),15,false,ui.text);
         body.setLineSpacing(dp(activity,4),1.10f);
         body.setPadding(0,dp(activity,16),0,dp(activity,12));
         scroll.addView(body);
