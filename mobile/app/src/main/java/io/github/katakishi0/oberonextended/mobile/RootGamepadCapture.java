@@ -255,6 +255,21 @@ public final class RootGamepadCapture {
         state.setPhysicalHat(stick("ABS_HAT0X"),stick("ABS_HAT0Y"));
     }
 
+    /** Reuse the evdev decoder for Shizuku UserService events without running su. */
+    public synchronized void prepareRemoteRanges(String details){
+        ranges.clear();axes.clear();
+        parseRanges(details);
+        for(Map.Entry<String,Bounds> entry:ranges.entrySet())
+            axes.put(entry.getKey(),entry.getValue().initial);
+        state.clearPhysical();
+    }
+    public synchronized void acceptRemoteEvents(String batch){
+        for(String line:batch.split("\\r?\\n")){
+            if(!line.isEmpty())consume(line);
+        }
+    }
+    public synchronized void clearRemote(){state.clearPhysical();}
+
     // Exposed for unit tests with no actual root or Android input devices.
     static int testButton(String label){return key(label);}
 }
