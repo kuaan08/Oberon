@@ -22,7 +22,8 @@ public final class VirtualGamepadView extends View {
     private MobileUi theme;
     private boolean haptics;
     private boolean animations=true;
-    private float sizeScale=1f;
+    private float sizeScale=1f,stickScale=1f,faceScale=1f;
+    private int opacity=100;
     private int leftPointer=-1,rightPointer=-1,heldButtons;
     private float lx,ly,rx,ry,lt,rt;
     private long pressAt;
@@ -31,17 +32,20 @@ public final class VirtualGamepadView extends View {
         final boolean portrait;
         final float w,h,stickR,faceR,gap;
         float leftX,leftY,rightX,rightY,faceX,faceY,dpadX,dpadY,topY,shoulderY,centerY;
-        Layout(float width,float height,float scale){
+        Layout(float width,float height,float scale,float sticks,float faces){
             w=width;h=height;portrait=h>w;
             if(portrait){
-                stickR=w*.145f*scale;faceR=w*.067f*scale;gap=w*.097f*scale;
+                stickR=w*.145f*scale*sticks;
+                faceR=w*.067f*scale*faces;
+                gap=w*.097f*scale*faces;
                 leftX=w*.245f;leftY=h*.76f;rightX=w*.755f;rightY=h*.76f;
                 faceX=w*.75f;faceY=h*.385f;
                 dpadX=w*.245f;dpadY=h*.385f;
                 topY=h*.175f;shoulderY=h*.245f;centerY=h*.565f;
             }else{
-                stickR=Math.min(h*.17f,w*.105f)*scale;
-                faceR=h*.071f*scale;gap=h*.113f*scale;
+                stickR=Math.min(h*.17f,w*.105f)*scale*sticks;
+                faceR=h*.071f*scale*faces;
+                gap=h*.113f*scale*faces;
                 leftX=w*.19f;leftY=h*.57f;rightX=w*.677f;rightY=h*.65f;
                 faceX=w*.843f;faceY=h*.47f;
                 dpadX=w*.385f;dpadY=h*.75f;
@@ -69,6 +73,11 @@ public final class VirtualGamepadView extends View {
     public void setHaptics(boolean value){haptics=value;}
     public void setAnimations(boolean value){animations=value;}
     public void setScale(float value){sizeScale=Math.max(.8f,Math.min(1.2f,value));invalidate();}
+    public void setIndividualSizes(float stick,float face){
+        stickScale=Math.max(.7f,Math.min(1.35f,stick));
+        faceScale=Math.max(.7f,Math.min(1.35f,face));invalidate();
+    }
+    public void setOpacity(int percent){opacity=Math.max(45,Math.min(100,percent));invalidate();}
 
     private void fill(int color){paint.setStyle(Paint.Style.FILL);paint.setColor(color);}
     private void stroke(int color,float width) {
@@ -118,9 +127,10 @@ public final class VirtualGamepadView extends View {
     }
     @Override protected void onDraw(Canvas c){
         super.onDraw(c);
-        Layout l=new Layout(getWidth(),getHeight(),sizeScale);
+        Layout l=new Layout(getWidth(),getHeight(),sizeScale,stickScale,faceScale);
         if(l.w<=0||l.h<=0)return;
         c.drawColor(theme.bg);
+        int layer=c.saveLayerAlpha(0,0,l.w,l.h,Math.round(opacity*255/100f));
         boolean portrait=l.portrait;
         title(c,"CONTROLE VIRTUAL",l.w*.50f,l.h*(portrait?.115f:.110f),
             Math.max(13,Math.min(l.w,l.h)*.026f),theme.muted);
@@ -155,6 +165,7 @@ public final class VirtualGamepadView extends View {
         face(c,"R3",l.rightX,l.rightY+l.stickR*1.50f,small,
             InputState.R3,theme.text);
 
+        c.restoreToCount(layer);
         if(animations && SystemClock.uptimeMillis()-pressAt<155){
             postInvalidateDelayed(16);
         }
