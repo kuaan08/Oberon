@@ -25,6 +25,7 @@ public final class SettingsActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         prefs=getSharedPreferences(MobileUi.PREFS,MODE_PRIVATE);
+        OrientationPrefs.apply(this,"app_orientation","auto");
         ui=MobileUi.from(this);
         getWindow().setStatusBarColor(ui.bg);
         getWindow().setNavigationBarColor(ui.bg);
@@ -73,23 +74,23 @@ public final class SettingsActivity extends Activity {
         palette.addView(themes);
         content.addView(palette,ui.margin(-1,-2,9));
 
-        section("TELA DO CONTROLE", "Escolha como o controle virtual ocupa toda a tela.");
+        section("ORIENTAÇÃO DO APLICATIVO",
+            "Escolha como o painel e as configurações aparecem no celular.");
+        LinearLayout appCard=ui.card(true);
+        addOrientationPicker(appCard,"app_orientation",
+            new String[]{"auto","portrait","landscape"},
+            new String[]{"Automático","Vertical","Horizontal"},true);
+        addNote(appCard,"Essa preferência vale para todo o aplicativo, exceto o controle virtual.");
+        content.addView(appCard,ui.margin(-1,-2,9));
+
+        section("TELA DO CONTROLE",
+            "O controle virtual tem sua própria orientação, independente do aplicativo.");
         LinearLayout orientation=ui.card(true);
-        RadioGroup orientations=new RadioGroup(this);
-        orientations.setOrientation(RadioGroup.HORIZONTAL);
-        String selected=prefs.getString("touch_orientation","landscape");
-        for(String value:new String[]{"portrait","landscape"}){
-            RadioButton option=new RadioButton(this);
-            option.setText(value.equals("portrait")?"Vertical":"Horizontal");
-            option.setTextColor(ui.text);option.setTextSize(15);
-            option.setButtonTintList(android.content.res.ColorStateList.valueOf(ui.accent));
-            option.setPadding(d(6),d(5),d(6),d(5));
-            option.setChecked(selected.equals(value));
-            option.setOnClickListener(v->prefs.edit().putString("touch_orientation",value).apply());
-            orientations.addView(option,new RadioGroup.LayoutParams(0,d(48),1f));
-        }
-        orientation.addView(orientations);
-        addNote(orientation, "A tela de toque fica em tela cheia, com botão Voltar. A orientação do painel segue a posição do celular.");
+        addOrientationPicker(orientation,"touch_orientation",
+            new String[]{"portrait","landscape"},
+            new String[]{"Vertical","Horizontal"},false);
+        addNote(orientation,
+            "O layout escolhido será aplicado quando você abrir o controle em tela cheia.");
         TextView scaleValue=ui.label("Tamanho dos botões: "+prefs.getInt("touch_scale",100)+"%",14,true,ui.text);
         orientation.addView(scaleValue,ui.margin(-1,d(34),7));
         SeekBar scaleBar=new SeekBar(this);
@@ -107,6 +108,10 @@ public final class SettingsActivity extends Activity {
             public void onStopTrackingTouch(SeekBar bar){}
         });
         orientation.addView(scaleBar,ui.margin(-1,d(42),0));
+
+        addScale(orientation,"Tamanho dos analógicos", "touch_stick_scale",100,70,135);
+        addScale(orientation,"Tamanho ABXY e direcional", "touch_face_scale",100,70,135);
+        addScale(orientation,"Opacidade dos controles", "touch_opacity",100,45,100);
         content.addView(orientation,ui.margin(-1,-2,7));
 
         section("EXPERIÊNCIA", "Animações e resposta visual podem ser ajustadas.");
@@ -114,6 +119,8 @@ public final class SettingsActivity extends Activity {
         addSwitch(options,"Animações suaves","Transições e feedback nos botões", "animations",true);
         addSwitch(options,"Vibração ao tocar","Pequenas vibrações nos botões virtuais (se disponíveis)", "haptics",true);
         addSwitch(options,"Começar em Bluetooth / USB","Mostrar o modo físico ao abrir o app", "default_physical",true);
+        addSwitch(options,"Modo detalhado","Exibir dados de controle e comunicação no painel",
+            "detailed_mode",false);
         content.addView(options,ui.margin(-1,-2,9));
 
         section("SENSIBILIDADE", "A zona morta elimina movimentos mínimos involuntários.");
@@ -142,19 +149,129 @@ public final class SettingsActivity extends Activity {
         addNote(network,"O app original do Oberon precisa estar aberto no Xbox. O Android não injeta controles diretamente no console.");
         addNote(network,"Suporte a um controle transmitido por vez nesta versão.");
         content.addView(network,ui.margin(-1,-2,8));
+        section("DIAGNÓSTICOS E ATUALIZAÇÕES",
+            "Informações técnicas e novas versões do Oberon Extended Mobile.");
+        LinearLayout tools=ui.card(true);
+        Button diagnostics=ui.button("Diagnóstico detalhado",false);
+        diagnostics.setOnClickListener(v->
+            startActivity(new android.content.Intent(this,DiagnosticsActivity.class)));
+        tools.addView(diagnostics,ui.margin(-1,d(51),3));
+        Button updates=ui.button("Verificar atualizações",false);
+        updates.setOnClickListener(v->
+            startActivity(new android.content.Intent(this,UpdatesActivity.class)));
+        tools.addView(updates,ui.margin(-1,d(51),10));
+        content.addView(tools,ui.margin(-1,-2,8));
+
+        section("EXPERIMENTAL",
+            "Compatibilidade com controles genéricos e comportamento da conexão.");
+        LinearLayout experiments=ui.card(true);
+        addSwitch(experiments,"Ativar compatibilidade experimental",
+            "Habilita os ajustes avançados abaixo","experimental_enabled",false);
+        addSwitch(experiments,"Eixos alternativos do analógico direito",
+            "Tenta RX/RY em controles que não respondem usando Z/RZ",
+            "experimental_axes_rxry",false);
+        addSwitch(experiments,"Inverter eixo Y",
+            "Inverte o movimento vertical dos analógicos físicos",
+            "experimental_invert_y",false);
+        addSwitch(experiments,"Trocar A e B",
+            "Para controles genéricos com botões A/B invertidos",
+            "experimental_swap_ab",false);
+        addSwitch(experiments,"TCP sem espera de agrupamento",
+            "Ativa TCP_NODELAY (padrão). Reinicie o servidor após mudar.",
+            "experimental_tcp_nodelay",true);
+        addNote(experiments,"A opção TCP_NODELAY pode reduzir o atraso causado "+
+            "pelo agrupamento de pacotes, mas não controla o ping da rede Xbox.");
+        content.addView(experiments,ui.margin(-1,-2,8));
+        section("CONTROLE PREFERIDO",
+            "Escolha um dispositivo Android ou mantenha a captura automática.");
+        LinearLayout controllers=ui.card(true);
+        addControllerChoices(controllers);
+        content.addView(controllers,ui.margin(-1,-2,8));
+
 
         Button reset=ui.button("Restaurar todas as configurações",false);
-        reset.setOnClickListener(v->new android.app.AlertDialog.Builder(this)
-            .setTitle("Restaurar padrões?")
-            .setMessage("Temas, orientação, vibração, animações e zona morta voltarão ao padrão.")
-            .setNegativeButton("Cancelar",null)
-            .setPositiveButton("Restaurar",(dialog,which)->{
+        reset.setOnClickListener(v->ExtendedDialog.confirm(this,
+            "Restaurar configurações?",
+            "Temas, orientação, controle preferido, compatibilidade, botões "+
+            "virtuais e ajustes de rede serão restaurados ao padrão.",
+            "Restaurar",()->{
                 prefs.edit().clear().apply();
                 MobileService.INPUT.setDeadzone(.10f);
                 MobileService.INPUT.reset();
                 recreate();
-            }).show());
+            }));
         content.addView(reset,ui.margin(-1,d(52),15));
+    }
+    private void addOrientationPicker(LinearLayout panel,String key,
+        String[] values,String[] labels,boolean wholeApp) {
+        LinearLayout row=new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        Button[] choices=new Button[values.length];
+        for(int i=0;i<values.length;i++) {
+            final String value=values[i];
+            Button b=ui.button(labels[i],false);
+            b.setTextSize(12);
+            choices[i]=b;
+            LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,d(49),1);
+            if(i>0)bp.leftMargin=d(7);
+            row.addView(b,bp);
+            b.setOnClickListener(v->{
+                prefs.edit().putString(key,value).apply();
+                for(int j=0;j<choices.length;j++) {
+                    boolean selected=values[j].equals(value);
+                    choices[j].setTextColor(selected?ui.accentText:ui.text);
+                    choices[j].setBackground(ui.shape(selected?ui.accent:ui.surface,11));
+                }
+                if(wholeApp)OrientationPrefs.apply(this,"app_orientation","auto");
+            });
+        }
+        String selected=prefs.getString(key,wholeApp?"auto":"landscape");
+        for(int i=0;i<choices.length;i++){
+            boolean active=values[i].equals(selected);
+            choices[i].setTextColor(active?ui.accentText:ui.text);
+            choices[i].setBackground(ui.shape(active?ui.accent:ui.surface,11));
+        }
+        panel.addView(row,ui.margin(-1,d(53),4));
+    }
+    private void addScale(LinearLayout panel,String title,String key,
+                          int fallback,int min,int max) {
+        TextView label=ui.label(title+": "+prefs.getInt(key,fallback)+"%",
+            14,true,ui.text);
+        panel.addView(label,ui.margin(-1,d(36),8));
+        SeekBar slider=new SeekBar(this);
+        slider.setMax(max-min);
+        slider.setProgress(Math.max(0,Math.min(max-min,prefs.getInt(key,fallback)-min)));
+        slider.setProgressTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        slider.setThumbTintList(android.content.res.ColorStateList.valueOf(ui.accent));
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser) {
+                int value=min+progress;
+                label.setText(title+": "+value+"%");
+                if(fromUser)prefs.edit().putInt(key,value).apply();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        panel.addView(slider,ui.margin(-1,d(43),0));
+    }
+    private void addControllerChoices(LinearLayout target){
+        int selected=prefs.getInt("selected_controller",-1);
+        Button auto=ui.button((selected<0?"✓  ":"")+"Detecção automática",selected<0);
+        auto.setOnClickListener(v->{prefs.edit().putInt("selected_controller",-1).apply();recreate();});
+        target.addView(auto,ui.margin(-1,d(48),3));
+        int count=0;
+        for(int id:android.view.InputDevice.getDeviceIds()){
+            android.view.InputDevice device=android.view.InputDevice.getDevice(id);
+            if(!InputDevices.isController(device))continue;
+            count++;
+            Button choose=ui.button((selected==id?"✓  ":"")+device.getName(),selected==id);
+            choose.setOnClickListener(v->{
+                prefs.edit().putInt("selected_controller",id).apply();recreate();
+            });
+            target.addView(choose,ui.margin(-1,d(49),8));
+        }
+        if(count==0)addNote(target,"Nenhum dispositivo físico encontrado. "+
+            "Conecte o controle via Bluetooth ou USB e abra esta página novamente.");
     }
     private void section(String title,String sub) {
         content.addView(ui.label(title,14,true,ui.accent),ui.margin(-1,d(30),14));
