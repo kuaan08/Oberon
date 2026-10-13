@@ -33,7 +33,7 @@ public final class ControllerSlots {
         ArrayList<Integer> stale=new ArrayList<>();
         for(Map.Entry<Integer,Integer> entry:assigned.entrySet())
             if(!ids.contains(entry.getKey()) || ids.indexOf(entry.getKey())>=4){
-                if(entry.getValue()>0)pads[entry.getValue()].clearPhysical();
+                pads[entry.getValue()].clearPhysical();
                 stale.add(entry.getKey());
             }
         for(Integer id:stale)assigned.remove(id);
